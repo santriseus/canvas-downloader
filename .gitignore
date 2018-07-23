@@ -1,0 +1,8 @@
+bower_components
+node_modules
+/build
+tmp
+.DS_Store
+.idea/
+.vscode/
+temp/
