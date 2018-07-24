@@ -1,0 +1,14 @@
+body{
+    width: 330px;
+    height: 200px;
+    overflow: scroll;
+}
+
+ul{
+    list-style-type: none;
+}
+
+img {
+    padding:1px;
+    border:1px solid #021a40;
+}

@@ -15,7 +15,7 @@
       "32": "icons/icon32.png"
     },
     "default_title": "Canvas - detect and download.",
-    "default_popup": "src/popup.html"
+    "default_popup": "src/popup/popup.html"
   },
   "content_scripts": [
     {
