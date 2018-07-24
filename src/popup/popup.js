@@ -21,18 +21,18 @@
 
             let html = [];
 
-            html.push("<table>");
+            html.push("<table  class=\"table is-narrow\">");
             html.push("<tr>");
             html.push("<th>");
             html.push("Preview");
             html.push("</th>");
             html.push("<th colspan=\"4\">");
-            html.push("Download options");
+            html.push("Export options");
             html.push("</th>");
             html.push("</tr>");
 
-            canvasInfoList.forEach((canvasInfo)=>{
-                html.push(drawElement(html, canvasInfo));
+            canvasInfoList.forEach((canvasInfo, index)=>{
+                html.push(drawElement(html, canvasInfo, index));
             });
 
             html.push("</table>");
@@ -44,24 +44,28 @@
         }
     }
 
-    function drawElement(html, element){
+    function drawElement(html, element, index){
         html.push("<tr>");
         html.push("<td>");
         html.push("<img src=\"" + element.dataURL + "\">");
         html.push("</td>");
         html.push("<td>");
-        html.push("<button>PNG</button>");
+        html.push("<a href=\"#\" title=\"Download as PNG image.\">PNG</a> ");
         html.push("</td>");
         html.push("<td>");
-        html.push("<button>JPEG</button>");
+        html.push("<a href=\"#\" title=\"Download as JPEG image with 100% quality.\">JPEG</a> ");
         html.push("</td>");
         html.push("<td>");
-        html.push("<button>BMP</button>");
+        html.push("<a href=\"#\" title=\"Download as BMP image.\">BMP</a> ");
         html.push("</td>");
         html.push("<td>");
-        html.push("<button>WEBP</button>");
+        html.push("<a href=\"#\" title=\"Download as WEBP image.\">WEBP</a> ");
         html.push("</td>");
         html.push("</tr>");
+    }
+
+    function exportCanvas(){
+        console.log("OLOLO");
     }
 
 }());

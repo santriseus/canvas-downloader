@@ -29,7 +29,8 @@
 
     chrome.runtime.sendMessage(chrome.runtime.id, {count: count});
 
-    function getCanvasInfoList(){
+
+    function getCanvasElementsList(){
 
         let canvasList = Array.from(document.getElementsByTagName("canvas"));
 
@@ -42,6 +43,13 @@
                 }
             });
         }
+
+        return canvasList;
+    }
+
+    function getCanvasInfoList(){
+
+        let canvasList = getCanvasElementsList();
 
         if (canvasList.length < 1)
             return [];

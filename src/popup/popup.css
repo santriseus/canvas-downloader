@@ -1,11 +1,6 @@
 body{
     width: 330px;
-    height: 200px;
-    overflow: scroll;
-}
-
-ul{
-    list-style-type: none;
+    text-align: center;
 }
 
 img {
