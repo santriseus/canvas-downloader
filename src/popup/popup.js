@@ -6,12 +6,19 @@
         GET_CANVAS_INFO_LIST: "GET_CANVAS_INFO_LIST"
     };
 
+    let canvasInfoList = [];
+
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-        chrome.tabs.sendMessage(tabs[0].id, {command: COMMANDS.GET_CANVAS_INFO_LIST}, function(response) {
-            drawContent(response.canvasInfoList);
-        });
+        chrome.tabs.sendMessage(tabs[0].id, {command: COMMANDS.GET_CANVAS_INFO_LIST});
     });
 
+    chrome.runtime.onMessage.addListener(function(message, sender) {
+        if (message.canvasInfoList) {
+            canvasInfoList = canvasInfoList.concat(message.canvasInfoList);
+            console.log('Response ' + JSON.stringify(message.canvasInfoList));
+            drawContent(canvasInfoList);
+        }
+    });
 
     function drawContent(canvasInfoList){
 

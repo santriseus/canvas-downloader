@@ -9,23 +9,16 @@
 
             switch (request.command) {
                 case COMMANDS.GET_CANVAS_INFO_LIST:
-                    sendResponse({canvasInfoList: getCanvasInfoList()});
+                    let list = getCanvasInfoList();
+                    console.log("sending GET_CANVAS_INFO_LIST response " + JSON.stringify(list));
+                    chrome.runtime.sendMessage(chrome.runtime.id, {canvasInfoList: list});
                     break;
                 default:
                     break;
-
             }
         });
 
     let count = document.getElementsByTagName("canvas").length;
-
-    if (window.document.frames) {
-        window.document.frames.forEach(function (frame) {
-            let frameDoc = frame.contentDocument || frame.contentWindow.document;
-            let frameCount = frameDoc.getElementsByTagName("canvas").length;
-            count = count + frameCount;
-        });
-    }
 
     chrome.runtime.sendMessage(chrome.runtime.id, {count: count});
 
@@ -33,16 +26,6 @@
     function getCanvasElementsList(){
 
         let canvasList = Array.from(document.getElementsByTagName("canvas"));
-
-        if (window.document.frames) {
-            window.document.frames.forEach(function (frame) {
-                let frameDoc = frame.contentDocument || frame.contentWindow.document;
-                let frameCanvasList = frameDoc.getElementsByTagName("canvas");
-                if (frameCanvasList.length > 0){
-                    canvasList.concat(Array.from(frameCanvasList))
-                }
-            });
-        }
 
         return canvasList;
     }
