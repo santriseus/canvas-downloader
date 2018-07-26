@@ -35,6 +35,7 @@
     "persistent": false
   },
   "permissions": [
-    "*://*/*"
+    "*://*/*",
+    "downloads"
   ]
 }
