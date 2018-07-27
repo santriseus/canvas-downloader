@@ -1,7 +1,7 @@
 {
   "name": "Canvas - detect and download.",
   "short_name": "Canvas downloader",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "manifest_version": 2,
   "description": "Extension helps detect if canvas is used at the web page and allows to export and save canvas content.",
   "homepage_url": "https://github.com/santriseus/canvas-detect-and-download",
