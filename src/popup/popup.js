@@ -10,7 +10,7 @@
     let canvasInfoList = [];
 
     document.getElementsByTagName("section")[0].addEventListener('click', (event)=>{
-        if (event.target.tagName !== 'A')
+        if (event.target.tagName !== 'BUTTON')
             return;
         event.preventDefault();
         console.log(event.target.dataset.canvasType);
