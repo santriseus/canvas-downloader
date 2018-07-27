@@ -25,14 +25,14 @@
             }
         });
 
-    let count = document.getElementsByTagName("canvas").length;
+    let count = getCanvasElementsList.length;
 
     chrome.runtime.sendMessage(chrome.runtime.id, {count: count});
 
 
     function getCanvasElementsList(){
 
-        let canvasList = Array.from(document.getElementsByTagName("canvas"));
+        let canvasList = Array.from(document.getElementsByTagName("canvas")).filter((canvas => { return !isTainted(canvas)}));
 
         return canvasList;
     }
@@ -78,6 +78,15 @@
         let arr = new Uint8Array((len || 40) / 2);
         window.crypto.getRandomValues(arr);
         return Array.from(arr, dec2hex).join('');
+    }
+
+    function isTainted(canvas) {
+        try {
+            let pixel = canvas.ctx.getImageData(0, 0, 1, 1);
+            return false;
+        } catch(err) {
+            return (err.code === 18);
+        }
     }
 
 }());
