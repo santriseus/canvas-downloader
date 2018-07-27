@@ -25,7 +25,7 @@
             }
         });
 
-    let count = getCanvasElementsList.length;
+    let count = getCanvasElementsList().length;
 
     chrome.runtime.sendMessage(chrome.runtime.id, {count: count});
 
@@ -82,7 +82,7 @@
 
     function isTainted(canvas) {
         try {
-            let pixel = canvas.ctx.getImageData(0, 0, 1, 1);
+            let pixel = canvas.getContext("2d").getImageData(0, 0, 1, 1);
             return false;
         } catch(err) {
             return (err.code === 18);

@@ -97,8 +97,4 @@
         html.push("</tr>");
     }
 
-    function exportCanvas(){
-        console.log("OLOLO");
-    }
-
 }());
