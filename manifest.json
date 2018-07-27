@@ -1,7 +1,7 @@
 {
-  "name": "Canvas - detect and download.",
-  "short_name": "Canvas downloader",
-  "version": "0.0.3",
+  "name": "Canvas downloader. Detect and export.",
+  "short_name": "Canvas downloader.",
+  "version": "0.0.4",
   "manifest_version": 2,
   "description": "Extension helps detect if canvas is used at the web page and allows to export and save canvas content.",
   "homepage_url": "https://github.com/santriseus/canvas-detect-and-download",
@@ -15,7 +15,7 @@
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
     },
-    "default_title": "Canvas - detect and download.",
+    "default_title": "Canvas downloader. Detect and export.",
     "default_popup": "src/popup/popup.html"
   },
   "content_scripts": [
