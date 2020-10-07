@@ -58,7 +58,14 @@
 
     let tabs = await chrome.tabs.query({active: true, currentWindow: true});
 
-    let result = await chrome.tabs.sendMessage(tabs[0].id, {command: COMMANDS.GET_CANVAS_INFO_LIST});
+    chrome.runtime.onMessage.addListener(function(message) {
+        if (message.canvasInfoList) {
+            canvasInfoList = canvasInfoList.concat(message.canvasInfoList);
+            drawContent(canvasInfoList);
+        }
+    });
+
+    await chrome.tabs.sendMessage(tabs[0].id, {command: COMMANDS.GET_CANVAS_INFO_LIST});
     canvasInfoList = canvasInfoList.concat(result.canvasInfoList);
     drawContent(canvasInfoList);
 
