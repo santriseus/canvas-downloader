@@ -66,8 +66,6 @@
     });
 
     await chrome.tabs.sendMessage(tabs[0].id, {command: COMMANDS.GET_CANVAS_INFO_LIST});
-    canvasInfoList = canvasInfoList.concat(result.canvasInfoList);
-    drawContent(canvasInfoList);
 
     async function getCanvasContent (data){
         let tabs = await chrome.tabs.query({active: true, currentWindow: true});
