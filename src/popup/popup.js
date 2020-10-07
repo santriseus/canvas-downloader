@@ -123,9 +123,6 @@
         html.push("<button class=\"button is-primary  is-small\" data-canvas-type=\"image/jpeg\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as JPEG image with 100% quality.\">JPEG</button>");
         html.push("</td>");
         html.push("<td>");
-        html.push("<button class=\"button is-primary  is-small\" data-canvas-type=\"image/bmp\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as BMP image.\">BMP</button>");
-        html.push("</td>");
-        html.push("<td>");
         html.push("<button class=\"button is-primary  is-small\" data-canvas-type=\"image/webp\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as WEBP image.\">WEBP</button>");
         html.push("</td>");
         html.push("</tr>");
@@ -141,9 +138,6 @@
         html.push("</td>");
         html.push("<td>");
         html.push("<button class=\"button  is-small\" data-canvas-type=\"image/jpeg\" data-canvas-data=\"" + data + "\" title=\"Download All as JPEG images with 100% quality.\">JPEG</button>");
-        html.push("</td>");
-        html.push("<td>");
-        html.push("<button class=\"button  is-small\" data-canvas-type=\"image/bmp\" data-canvas-data=\"" + data + "\" title=\"Download All as BMP images.\">BMP</button>");
         html.push("</td>");
         html.push("<td>");
         html.push("<button class=\"button  is-small\" data-canvas-type=\"image/webp\" data-canvas-data=\"" + data + "\" title=\"Download All as WEBP images.\">WEBP</button>");
