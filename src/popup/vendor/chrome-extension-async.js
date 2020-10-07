@@ -41,7 +41,7 @@
                         }
 
                         // Chrome extensions always fire the callback, but populate chrome.runtime.lastError with exception details
-                        if (chrome.runtime.lastError)
+                        if (chrome.runtime.lastError && chrome.runtime.lastError.message !== "The message port closed before a response was received.")
                             // Return as an error for the awaited catch block
                             reject(new Error(chrome.runtime.lastError.message || `Error thrown by API ${chrome.runtime.lastError}`));
                         else {
