@@ -36,7 +36,6 @@
     "persistent": false
   },
   "permissions": [
-    "*://*/*",
     "downloads"
   ]
 }
