@@ -13,7 +13,7 @@
             switch (request.command) {
                 case COMMANDS.GET_CANVAS_INFO_LIST:
                     let list = getCanvasInfoList();
-                    chrome.runtime.sendMessage(chrome.runtime.id, {canvasInfoList: list});
+                    sendResponse( {canvasInfoList: list});
                     break;
                     case COMMANDS.GET_CANVAS_DATA:
                         if (request.data.frame === frameId){

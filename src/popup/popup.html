@@ -14,11 +14,16 @@
             </div>
         </div>
     </header>
-    <section class="container">
+    <section id="main" class="container">
         <div class="notification">
             No canvas was found on the page.
         </div>
     </section>
-    <script src="popup.js"></script>
+    <section id="spinner" class="container">
+        <div class="spinner"></div>
+    </section>
+    <script type="text/javascript" src="vendor/chrome-extension-async.js"></script>
+    <script type="text/javascript" src="vendor/jszip.min.js"></script>
+    <script type="text/javascript" src="popup.js"></script>
 </body>
 </html>
