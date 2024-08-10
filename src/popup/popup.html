@@ -1,28 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <link href="vendor/bulma.min.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="popup.css">
-    <meta charset="UTF-8">
+    <link rel="stylesheet" href="popup.css" />
+    <meta charset="UTF-8" />
     <title>Canvas - detect and download.</title>
-</head>
-<body>
+  </head>
+  <body>
     <header class="hero is-primary is-small">
-        <div class="hero-body">
-            <div class="container">
-                <b>Canvas - detect and download.</b>
-            </div>
+      <div class="hero-body">
+        <div class="container">
+          <b>Canvas - detect and download.</b>
         </div>
+      </div>
     </header>
     <section id="main" class="container">
-        <div class="notification">
-            No canvas was found on the page.
-        </div>
+      <div class="notification">No canvas was found on the page.</div>
     </section>
     <section id="spinner" class="container">
-        <div class="spinner"></div>
+      <div class="spinner"></div>
+    </section>
+    <section id="feedback" class="container">
+      <div class="notification"></div>
     </section>
     <script type="text/javascript" src="vendor/jszip.min.js"></script>
     <script type="text/javascript" src="popup.js"></script>
-</body>
+  </body>
 </html>
