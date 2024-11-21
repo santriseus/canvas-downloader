@@ -1,5 +1,5 @@
 body{
-    width: 300px;
+    width: 350px;
     text-align: center;
 }
 
@@ -18,4 +18,9 @@ img {
 #spinner{
     display: none;
     padding: 20px;
+}
+
+.fixed-size {
+    width: 55px;
+    text-align: center;
 }

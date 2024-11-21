@@ -41,11 +41,21 @@
                 index: event.target.dataset.canvasIndex,
                 type: event.target.dataset.canvasType,
             });
-            await chrome.downloads.download({
-                url: dataURL,
-                filename: "canvas." + event.target.dataset.canvasType.substring(6),
-                saveAs: true
-            });
+            if (event.target.dataset.canvasCopy){
+                await copyDataUrlToClipboard(dataURL);
+                event.target.classList.add('is-success');
+                event.target.innerText = 'COPIED!';
+                setTimeout(()=>{
+                    event.target.classList.remove('is-success');
+                    event.target.innerText = 'COPY';
+                }, 1000);
+            } else {
+                await chrome.downloads.download({
+                    url: dataURL,
+                    filename: "canvas." + event.target.dataset.canvasType.substring(6),
+                    saveAs: true
+                });
+            }
         }
 
         main.style.display = 'block';
@@ -125,6 +135,9 @@
         html.push("<td>");
         html.push("<button class=\"button is-primary  is-small\" data-canvas-type=\"image/webp\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as WEBP image.\">WEBP</button>");
         html.push("</td>");
+        html.push("<td>");
+        html.push("<button class=\"button is-primary  is-small fixed-size\" data-canvas-type=\"image/png\"  data-canvas-copy=\"true\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Copy to clipboard.\">COPY</button>");
+        html.push("</td>");
         html.push("</tr>");
     }
 
@@ -142,7 +155,37 @@
         html.push("<td>");
         html.push("<button class=\"button  is-small\" data-canvas-type=\"image/webp\" data-canvas-data=\"" + data + "\" title=\"Download All as WEBP images.\">WEBP</button>");
         html.push("</td>");
+        html.push("<td  style='text-align: center'>");
+        html.push("</td>");
         html.push("</tr>");
+    }
+
+    async function copyDataUrlToClipboard(dataUrl) {
+        // Convert Data URL to a Blob
+        const blob = await dataUrlToBlob(dataUrl);
+
+        // Create a ClipboardItem
+        const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+
+        // Write to clipboard
+        await navigator.clipboard.write([clipboardItem])
+    }
+
+    // Helper function to convert Data URL to a Blob
+    function dataUrlToBlob(dataUrl) {
+        return new Promise((resolve) => {
+            const parts = dataUrl.split(',');
+            const mime = parts[0].match(/:(.*?);/)[1];
+            const bstr = atob(parts[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+
+            resolve(new Blob([u8arr], { type: mime }));
+        });
     }
 
 }());
