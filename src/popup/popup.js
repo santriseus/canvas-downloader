@@ -35,7 +35,52 @@
                 filename: "canvas_all.zip",
                 saveAs: true
             });
-        } else{
+        }
+        else if (event.target.dataset.canvasPdf){
+            let counter = 1;
+            let doc = new window.jspdf.jsPDF();
+            let entries = event.target.dataset.canvasPdf.split(';;;').map(entry => entry.split('|||'));
+            for (let entry of entries){
+                let dataURL = await getCanvasContent( {
+                    frame:entry[0],
+                    index: entry[1],
+                    type: event.target.dataset.canvasType,
+                });
+                // fit image to page, preserve aspect ratio
+                let imageWidth = 0, imageHeight = 0, width = 0, height = 0;
+                try {
+                    const dimensions = await getImageDimensions(dataURL);
+                    imageWidth = dimensions.width;
+                    imageHeight = dimensions.height;
+                } catch (error) {
+                    console.log('Error getting image dimensions:', error);
+                    continue;
+                }
+                if (imageWidth === 0 || imageHeight === 0) {
+                    console.log('Invalid image dimensions:', imageWidth, imageHeight);
+                    continue;
+                }
+
+
+                let pageWidth = 210;
+                let pageHeight = 297;
+                let ratio = imageWidth / imageHeight;
+                if (ratio > 1) {
+                    width = pageWidth;
+                    height = pageWidth / ratio; // preserve aspect ratio
+                }
+                else {
+                    height = pageHeight;
+                    width = pageHeight * ratio; // preserve aspect ratio
+                }
+                doc.addImage(dataURL, 'PNG', 0, 0, width, height);
+                if (counter < entries.length)
+                    doc.addPage();
+                counter++;
+            }
+            doc.save('canvas_all.pdf');
+        }
+        else{
             let dataURL = await getCanvasContent( {
                 frame:event.target.dataset.canvasFrame,
                 index: event.target.dataset.canvasIndex,
@@ -105,10 +150,10 @@
             html.push("</th>");
             html.push("</tr>");
 
-            html.push(drawDownloadAll(html, canvasInfoList.map(element => element.frameId + '|||' + element.index).join(';;;')));
+            drawDownloadAll(html, canvasInfoList.map(element => element.frameId + '|||' + element.index).join(';;;'))
 
             canvasInfoList.forEach((canvasInfo)=>{
-                html.push(drawElement(html, canvasInfo));
+                drawElement(html, canvasInfo);
             });
 
             html.push("</table>");
@@ -124,7 +169,7 @@
     function drawElement(html, element){
         html.push("<tr>");
         html.push("<td>");
-        html.push("<img src=\"" + element.dataURL + "\">");
+        html.push("<img alt='canvas content' src=\"" + element.dataURL + "\">");
         html.push("</td>");
         html.push("<td>");
         html.push("<button class=\"button is-primary  is-small\" data-canvas-type=\"image/png\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as PNG image.\">PNG</button>");
@@ -155,7 +200,8 @@
         html.push("<td>");
         html.push("<button class=\"button  is-small\" data-canvas-type=\"image/webp\" data-canvas-data=\"" + data + "\" title=\"Download All as WEBP images.\">WEBP</button>");
         html.push("</td>");
-        html.push("<td  style='text-align: center'>");
+        html.push("<td>");
+        html.push("<button class=\"button  is-small\" data-canvas-type=\"image/png\" data-canvas-pdf=\"" + data + "\" title=\"Download All as PDF file.\">PDF</button>");
         html.push("</td>");
         html.push("</tr>");
     }
@@ -185,6 +231,29 @@
             }
 
             resolve(new Blob([u8arr], { type: mime }));
+        });
+    }
+
+    function getImageDimensions(dataUrl) {
+        return new Promise((resolve, reject) => {
+            // Create an Image object
+            const img = new Image();
+
+            // Set up an onload event to resolve the dimensions
+            img.onload = function() {
+                // Once loaded, get the width and height
+                const width = img.width;
+                const height = img.height;
+                resolve({ width, height });
+            };
+
+            // Set up an onerror event to handle loading issues
+            img.onerror = function() {
+                reject(new Error('Unable to load image.'));
+            };
+
+            // Set the src of the Image to the data URL
+            img.src = dataUrl;
         });
     }
 
