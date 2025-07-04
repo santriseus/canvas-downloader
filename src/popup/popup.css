@@ -1,5 +1,5 @@
 body{
-    width: 350px;
+    width: 370px;
     text-align: center;
 }
 
@@ -23,4 +23,27 @@ img {
 .fixed-size {
     width: 55px;
     text-align: center;
+}
+
+.checkbox-column {
+    width: 40px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.checkbox-input {
+    transform: scale(1.2);
+    margin: 0;
+}
+
+#all-toggle {
+    accent-color: #000000;
+}
+
+#all-toggle:indeterminate {
+    color: #00d1b2;
+}
+
+input[name="canvas-select"] {
+    accent-color: #00d1b2;
 }
