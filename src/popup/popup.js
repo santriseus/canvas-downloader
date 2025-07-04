@@ -73,7 +73,7 @@
                     height = pageHeight;
                     width = pageHeight * ratio; // preserve aspect ratio
                 }
-                doc.addImage(dataURL, 'PNG', 0, 0, width, height);
+                doc.addImage(dataURL, 'PNG', 0, 0, width, height, undefined,'FAST');
                 if (counter < entries.length)
                     doc.addPage();
                 counter++;
