@@ -9,11 +9,46 @@
 <body>
     <header class="hero is-primary is-small">
         <div class="hero-body">
-            <div class="container">
+            <div class="container header-container">
                 <b>Canvas - detect and download.</b>
+                <button id="settings-btn" class="button is-small settings-button">settings</button>
             </div>
         </div>
     </header>
+    
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="settings-modal">
+        <div class="settings-modal-content">
+            <div class="settings-header">
+                <span class="settings-title">Settings</span>
+                <button id="settings-close" class="settings-close">&times;</button>
+            </div>
+            <div class="settings-body">
+                <div class="settings-section">
+                    <label class="settings-label">
+                        <input type="checkbox" id="setting-default-location" class="settings-checkbox">
+                        Use default download location
+                    </label>
+                    <p class="settings-hint">Requires "Ask where to save each file" to be OFF in Chrome settings. Will download the file automatically to the default location (Downloads folder).</p>
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label">
+                        <input type="checkbox" id="setting-multiple-downloads" class="settings-checkbox">
+                        Multiple downloads instead of ZIP
+                    </label>
+                    <p class="settings-hint">Download each file marked with a checkbox separately instead of creating a ZIP archive. Works best with "Use default download location" enabled since it allows automatic saving of large amounts of files without prompts.</p>
+                </div>
+                <div class="settings-section">
+                    <label class="settings-label">
+                        <input type="checkbox" id="setting-timestamp-prefix" class="settings-checkbox">
+                        Use precise timestamp as file prefix
+                    </label>
+                    <p class="settings-hint">Use timestamp (YYYYMMDD_HHMMSS) instead of "canvas" prefix for file names. Provides better sorting capabilities and helps organize files created chronologically.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <section id="main" class="container">
         <div class="notification">
             No canvas was found on the page.

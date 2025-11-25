@@ -7,6 +7,114 @@
 
     let canvasInfoList = [];
 
+    // Settings functionality
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsClose = document.getElementById('settings-close');
+
+    // Load saved settings
+    async function loadSettings() {
+        const settings = await chrome.storage.local.get(['useDefaultLocation', 'multipleDownloads', 'timestampPrefix']);
+        console.log('Loading settings:', settings);
+        
+        if (settings.useDefaultLocation !== undefined) {
+            document.getElementById('setting-default-location').checked = settings.useDefaultLocation;
+        }
+        if (settings.multipleDownloads !== undefined) {
+            document.getElementById('setting-multiple-downloads').checked = settings.multipleDownloads;
+        }
+        if (settings.timestampPrefix !== undefined) {
+            document.getElementById('setting-timestamp-prefix').checked = settings.timestampPrefix;
+        }
+    }
+
+    // Save settings
+    async function saveSettings() {
+        const settings = {
+            useDefaultLocation: document.getElementById('setting-default-location').checked,
+            multipleDownloads: document.getElementById('setting-multiple-downloads').checked,
+            timestampPrefix: document.getElementById('setting-timestamp-prefix').checked
+        };
+        console.log('Saving settings:', settings);
+        
+        await chrome.storage.local.set(settings);
+    }
+
+    // Close and save settings
+    async function closeSettings() {
+        await saveSettings();
+        settingsModal.classList.remove('active');
+        document.body.classList.remove('settings-open');
+    }
+
+    // Get useDefaultLocation setting
+    async function getUseDefaultLocation() {
+        const settings = await chrome.storage.local.get(['useDefaultLocation']);
+        console.log('Settings retrieved for download:', settings);
+        return settings.useDefaultLocation === true;
+    }
+
+    // Get multipleDownloads setting
+    async function getMultipleDownloads() {
+        const settings = await chrome.storage.local.get(['multipleDownloads']);
+        return settings.multipleDownloads === true;
+    }
+
+    // Get timestampPrefix setting
+    async function getTimestampPrefix() {
+        const settings = await chrome.storage.local.get(['timestampPrefix']);
+        return settings.timestampPrefix === true;
+    }
+
+    // Open settings modal
+    settingsBtn.addEventListener('click', () => {
+        console.log('Settings button clicked');
+        document.body.classList.add('settings-open');
+        settingsModal.classList.add('active');
+    });
+
+    // Close settings modal (and save)
+    settingsClose.addEventListener('click', closeSettings);
+
+    // Close modal when clicking outside (and save)
+    settingsModal.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+            closeSettings();
+        }
+    });
+
+    // Save settings immediately when checkbox changes
+    document.getElementById('setting-default-location').addEventListener('change', async (event) => {
+        console.log('Checkbox changed to:', event.target.checked);
+        await saveSettings();
+    });
+
+    document.getElementById('setting-multiple-downloads').addEventListener('change', async (event) => {
+        console.log('Multiple downloads changed to:', event.target.checked);
+        await saveSettings();
+    });
+
+    document.getElementById('setting-timestamp-prefix').addEventListener('change', async (event) => {
+        console.log('Timestamp prefix changed to:', event.target.checked);
+        await saveSettings();
+    });
+
+    // Helper function to get file prefix
+    function getFilePrefix(counter) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+    }
+
+    // Load settings on startup
+    await loadSettings();
+    console.log('Popup initialized');
+
     document.getElementsByTagName("section")[0].addEventListener('click', async (event)=>{
         if (event.target.tagName !== 'BUTTON')
             return;
@@ -33,6 +141,14 @@
                 // Use all items
                 entries = event.target.dataset.canvasData.split(';;;').map(entry => entry.split('|||'));
             }
+            let multipleDownloads = await getMultipleDownloads();
+            let useDefaultLocation = await getUseDefaultLocation();
+            let useTimestamp = await getTimestampPrefix();
+            let prefix = useTimestamp ? getFilePrefix() : 'canvas';
+            
+            // Calculate padding for counter based on number of images
+            const totalImages = entries.length;
+            const paddingLength = String(totalImages).length;
             
             for (let entry of entries){
                 let dataURL = await getCanvasContent( {
@@ -40,17 +156,33 @@
                     index: entry[1],
                     type: event.target.dataset.canvasType,
                 });
-                zip.file(`canvas_${counter}.` + event.target.dataset.canvasType.substring(6), dataURL.split('base64,')[1],{base64: true});
+                
+                const paddedCounter = String(counter).padStart(paddingLength, '0');
+                if (multipleDownloads) {
+                    // Download each file separately
+                    await chrome.downloads.download({
+                        url: dataURL,
+                        filename: `${prefix}_${paddedCounter}.` + event.target.dataset.canvasType.substring(6),
+                        saveAs: !useDefaultLocation
+                    });
+                } else {
+                    // Add to zip
+                    zip.file(`${prefix}_${paddedCounter}.` + event.target.dataset.canvasType.substring(6), dataURL.split('base64,')[1],{base64: true});
+                }
                 counter++;
             }
-            let content = await zip.generateAsync({type:"blob"});
-            let zipDataURL = URL.createObjectURL(content);
-            let filename = checkedCheckboxes.length < allCheckboxes.length ? "canvas_selected.zip" : "canvas_all.zip";
-            await chrome.downloads.download({
-                url: zipDataURL,
-                filename: filename,
-                saveAs: true
-            });
+            
+            // Only create zip if not using multiple downloads
+            if (!multipleDownloads) {
+                let content = await zip.generateAsync({type:"blob"});
+                let zipDataURL = URL.createObjectURL(content);
+                let filename = checkedCheckboxes.length < allCheckboxes.length ? `${prefix}_selected.zip` : `${prefix}_all.zip`;
+                await chrome.downloads.download({
+                    url: zipDataURL,
+                    filename: filename,
+                    saveAs: !useDefaultLocation
+                });
+            }
         }
         else if (event.target.dataset.canvasPdf){
             let counter = 1;
@@ -69,6 +201,10 @@
                 // Use all items (original behavior)
                 entries = event.target.dataset.canvasPdf.split(';;;').map(entry => entry.split('|||'));
             }
+            
+            // Calculate padding for counter based on number of pages
+            const totalPages = entries.length;
+            const paddingLength = String(totalPages).length;
             
             for (let entry of entries){
                 let dataURL = await getCanvasContent( {
@@ -108,7 +244,14 @@
                 counter++;
             }
             let filename = checkedCheckboxes.length < allCheckboxes.length ? 'canvas_selected.pdf' : 'canvas_all.pdf';
-            doc.save(filename);
+            let useDefaultLocation = await getUseDefaultLocation();
+            let pdfBlob = doc.output('blob');
+            let pdfURL = URL.createObjectURL(pdfBlob);
+            await chrome.downloads.download({
+                url: pdfURL,
+                filename: filename,
+                saveAs: !useDefaultLocation
+            });
         }
         else{
             let dataURL = await getCanvasContent( {
@@ -125,10 +268,14 @@
                     event.target.innerText = 'COPY';
                 }, 1000);
             } else {
+                let useDefaultLocation = await getUseDefaultLocation();
+                let useTimestamp = await getTimestampPrefix();
+                let prefix = useTimestamp ? getFilePrefix() : 'canvas';
+                console.log('useDefaultLocation:', useDefaultLocation, 'saveAs:', !useDefaultLocation);
                 await chrome.downloads.download({
                     url: dataURL,
-                    filename: "canvas." + event.target.dataset.canvasType.substring(6),
-                    saveAs: true
+                    filename: `${prefix}.` + event.target.dataset.canvasType.substring(6),
+                    saveAs: !useDefaultLocation
                 });
             }
         }

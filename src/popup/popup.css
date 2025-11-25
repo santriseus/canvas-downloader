@@ -1,6 +1,15 @@
 body{
     width: 370px;
     text-align: center;
+    position: relative;
+}
+
+body.settings-open {
+    min-height: 100vh;
+}
+
+html {
+    overflow-y: auto;
 }
 
 img {
@@ -46,4 +55,128 @@ img {
 
 input[name="canvas-select"] {
     accent-color: #00d1b2;
+}
+
+/* Header Container */
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Settings Button */
+.settings-button {
+    background-color: #83104f !important;
+    border-color: #83104f !important;
+    color: white !important;
+    font-size: 12px !important;
+    padding: 4px 10px !important;
+    height: auto !important;
+}
+
+.settings-button:hover {
+    background-color: #a01560 !important;
+    border-color: #a01560 !important;
+}
+
+/* Settings Modal */
+.settings-modal {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    min-height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.settings-modal.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.settings-modal-content {
+    background: white;
+    border-radius: 8px;
+    width: 370px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    font-size: 13px;
+    animation: slideDown 0.3s ease-out;
+}
+
+.settings-header {
+    background-color: #83104f;
+    color: white;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-title {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.settings-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.settings-close:hover {
+    opacity: 0.8;
+}
+
+.settings-body {
+    padding: 15px;
+}
+
+.settings-section {
+    margin-bottom: 15px;
+}
+
+.settings-section:last-child {
+    margin-bottom: 0;
+}
+
+.settings-label {
+    display: block;
+    font-size: 13px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.settings-checkbox {
+    accent-color: #83104f;
+    margin-right: 8px;
+    transform: scale(1.1);
+}
+
+.settings-hint {
+    font-size: 11px;
+    color: #888;
+    margin-top: 5px;
+    font-style: italic;
 }

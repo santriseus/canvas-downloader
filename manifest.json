@@ -35,6 +35,7 @@
     "service_worker": "src/service_worker.js"
   },
   "permissions": [
-    "downloads"
+    "downloads",
+    "storage"
   ]
 }
