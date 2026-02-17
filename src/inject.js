@@ -26,10 +26,6 @@
             }
         });
 
-    let count = getCanvasElementsList().length;
-
-    chrome.runtime.sendMessage(chrome.runtime.id, {count: count});
-
 
     function getCanvasElementsList(){
 
