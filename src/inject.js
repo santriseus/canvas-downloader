@@ -51,10 +51,10 @@
         for (let index = 0; index < canvasList.length; index++) {
             let canvas = canvasList[index];
 
-            if (canvas.width > 100 || canvas.height > 100) {
+            hiddenCanvas.getContext("2d").clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
-                hiddenCanvas.getContext("2d").clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
-
+            if (canvas.width > 50 || canvas.height > 50) {
+                // Resize large canvases to fit preview
                 if (canvas.width > canvas.height){
                     hiddenCanvas.width = 100;
                     hiddenCanvas.height = canvas.height * (hiddenCanvas.width / canvas.width);
@@ -62,11 +62,15 @@
                     hiddenCanvas.height = 100;
                     hiddenCanvas.width = canvas.width * (hiddenCanvas.height / canvas.height);
                 }
-
-                hiddenCanvas.getContext("2d").drawImage(canvas, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-                // wait requestAnimationFrame
-                await new Promise(requestAnimationFrame);
+            } else {
+                // Use original size for small canvases
+                hiddenCanvas.width = canvas.width;
+                hiddenCanvas.height = canvas.height;
             }
+
+            hiddenCanvas.getContext("2d").drawImage(canvas, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+            // wait requestAnimationFrame to ensure drawing is complete
+            await new Promise(requestAnimationFrame);
 
             result.push({
                 dataURL: hiddenCanvas.toDataURL(),
