@@ -12,8 +12,9 @@
         function (request, sender, sendResponse) {
             switch (request.command) {
                 case COMMANDS.GET_CANVAS_INFO_LIST:
-                    let list = getCanvasInfoList();
-                    chrome.runtime.sendMessage(chrome.runtime.id, {canvasInfoList: list});
+                    let list = getCanvasInfoList().then((list) => {
+                        chrome.runtime.sendMessage(chrome.runtime.id, {canvasInfoList: list});
+                    });
                     break;
                     case COMMANDS.GET_CANVAS_DATA:
                         if (request.data.frame === frameId){
@@ -37,7 +38,7 @@
         return canvasList;
     }
 
-    function getCanvasInfoList(){
+    async function getCanvasInfoList(){
 
         let canvasList = getCanvasElementsList();
 
@@ -46,28 +47,35 @@
 
         let hiddenCanvas = document.createElement('canvas');
 
-        return canvasList.map((canvas, index)=>{
-            if (canvas.width > 100 || canvas.height > 100){
+        let result = [];
+        for (let index = 0; index < canvasList.length; index++) {
+            let canvas = canvasList[index];
+
+            if (canvas.width > 100 || canvas.height > 100) {
 
                 hiddenCanvas.getContext("2d").clearRect(0, 0, hiddenCanvas.width, hiddenCanvas.height);
 
                 if (canvas.width > canvas.height){
                     hiddenCanvas.width = 100;
-                    hiddenCanvas.height = canvas.height * (hiddenCanvas.width/canvas.width);
+                    hiddenCanvas.height = canvas.height * (hiddenCanvas.width / canvas.width);
                 } else{
                     hiddenCanvas.height = 100;
-                    hiddenCanvas.width = canvas.width * (hiddenCanvas.height/canvas.height);
+                    hiddenCanvas.width = canvas.width * (hiddenCanvas.height / canvas.height);
                 }
 
                 hiddenCanvas.getContext("2d").drawImage(canvas, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+                // wait requestAnimationFrame
+                await new Promise(requestAnimationFrame);
             }
 
-            return {
+            result.push({
                 dataURL: hiddenCanvas.toDataURL(),
                 frameId: frameId,
                 index: index
-            }
-        })
+            });
+        }
+
+        return result;
     }
 
     function dec2hex (dec) {
