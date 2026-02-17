@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tainted Canvas Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 { color: #333; }
+        .test-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #363636;
+        }
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .canvas-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+        }
+        .canvas-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        .canvas-item canvas {
+            display: block;
+            margin: 0 auto 10px auto;
+            border: 2px solid #ccc;
+            background: #fff;
+        }
+        .canvas-item .attr-info {
+            font-size: 11px;
+            color: #666;
+            font-family: monospace;
+            background: #eee;
+            padding: 5px;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #d1ecf1; color: #0c5460; }
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        button {
+            background: #3273dc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #2366d1; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .result { 
+            margin-top: 10px; 
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .expected {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .expected.works { background: #d4edda; color: #155724; }
+        .expected.fails { background: #f8d7da; color: #721c24; }
+        .expected.url { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Tainted Canvas Test Page</h1>
+    <p>This page tests various canvas scenarios for the Canvas Downloader extension. Open the extension popup to see detected canvases.</p>
+
+    <!-- Test 1: Normal Canvas -->
+    <div class="test-section">
+        <h2>1. Normal Canvas <span class="expected works">Should Work ✅</span></h2>
+        <div class="description">
+            Canvas drawn with local content only. No cross-origin resources.
+            <br><strong>Expected:</strong> PNG, JPEG, WEBP, COPY all work.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>Gradient + Text</h3>
+                <canvas id="normal-canvas-1" width="200" height="150"></canvas>
+                <div class="attr-info">No data attributes</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Shapes</h3>
+                <canvas id="normal-canvas-2" width="200" height="150"></canvas>
+                <div class="attr-info">No data attributes</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Animation Frames</h3>
+                <canvas id="normal-canvas-3" width="200" height="150"></canvas>
+                <div class="attr-info">No data attributes</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 2: Tainted Canvas (Cross-origin image) -->
+    <div class="test-section">
+        <h2>2. Tainted Canvas - Cross-Origin Image <span class="expected fails">Should Fail ❌</span></h2>
+        <div class="description">
+            Canvas with cross-origin image drawn without CORS. These will be tainted.
+            <br><strong>Expected:</strong> Shows "🔒 Cross-origin (tainted)" - no export options.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>Picsum Photo #1</h3>
+                <canvas id="tainted-canvas-1" width="200" height="150"></canvas>
+                <div class="attr-info">No data attributes (tainted)</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Picsum Photo #2</h3>
+                <canvas id="tainted-canvas-2" width="200" height="150"></canvas>
+                <div class="attr-info">No data attributes (tainted)</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Placeholder Image</h3>
+                <canvas id="tainted-canvas-3" width="200" height="150"></canvas>
+                <div class="attr-info">No data attributes (tainted)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 3: Tainted Canvas with data-src -->
+    <div class="test-section">
+        <h2>3. Tainted Canvas with <code>data-src</code> <span class="expected url">Works via URL 🔗</span></h2>
+        <div class="description">
+            Tainted canvases with <code>data-src</code> attribute. Extension will use the URL directly.
+            <br><strong>Expected:</strong> Shows "🔗 Source URL" - PNG download available.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>data-src (picsum #10)</h3>
+                <canvas id="src-canvas-1" width="200" height="150" 
+                        data-src="https://picsum.photos/id/10/200/150"></canvas>
+                <div class="attr-info">data-src="https://picsum.photos/id/10/200/150"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>data-src (picsum #11)</h3>
+                <canvas id="src-canvas-2" width="200" height="150" 
+                        data-src="https://picsum.photos/id/11/200/150"></canvas>
+                <div class="attr-info">data-src="https://picsum.photos/id/11/200/150"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>data-src (picsum #12)</h3>
+                <canvas id="src-canvas-3" width="200" height="150" 
+                        data-src="https://picsum.photos/id/12/200/150"></canvas>
+                <div class="attr-info">data-src="https://picsum.photos/id/12/200/150"</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 4: Various data attributes -->
+    <div class="test-section">
+        <h2>4. Various Data Attributes <span class="expected url">Works via URL 🔗</span></h2>
+        <div class="description">
+            Testing different data attribute patterns that the extension checks.
+            <br><strong>Expected:</strong> Each should show "🔗 Source URL" indicator.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>data-source</h3>
+                <canvas id="attr-source" width="200" height="150" 
+                        data-source="https://picsum.photos/id/20/200/150"></canvas>
+                <div class="attr-info">data-source="https://picsum.photos/id/20/200/150"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>data-url</h3>
+                <canvas id="attr-url" width="200" height="150" 
+                        data-url="https://picsum.photos/id/30/200/150"></canvas>
+                <div class="attr-info">data-url="https://picsum.photos/id/30/200/150"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>data-original</h3>
+                <canvas id="attr-original" width="200" height="150" 
+                        data-original="https://picsum.photos/id/40/200/150"></canvas>
+                <div class="attr-info">data-original="https://picsum.photos/id/40/200/150"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>data-image-url</h3>
+                <canvas id="attr-image-url" width="200" height="150" 
+                        data-image-url="https://picsum.photos/id/50/200/150"></canvas>
+                <div class="attr-info">data-image-url="https://picsum.photos/id/50/200/150"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>dataset.imageUrl (JS)</h3>
+                <canvas id="attr-dataset" width="200" height="150"></canvas>
+                <div class="attr-info">canvas.dataset.imageUrl = "..." (set via JS)</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Multiple attributes</h3>
+                <canvas id="attr-multiple" width="200" height="150" 
+                        data-src="https://picsum.photos/id/60/200/150"
+                        data-original="https://picsum.photos/id/61/200/150"></canvas>
+                <div class="attr-info">data-src + data-original (data-src wins)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 5: CORS-enabled Canvas -->
+    <div class="test-section">
+        <h2>5. CORS-enabled Canvas <span class="expected works">Should Work ✅</span></h2>
+        <div class="description">
+            Canvas with cross-origin image loaded with <code>crossOrigin="anonymous"</code>.
+            <br><strong>Expected:</strong> All export options work (if server supports CORS).
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>CORS from picsum</h3>
+                <canvas id="cors-canvas-1" width="200" height="150"></canvas>
+                <div class="attr-info">img.crossOrigin = "anonymous"</div>
+            </div>
+            <div class="canvas-item">
+                <h3>CORS from picsum #16</h3>
+                <canvas id="cors-canvas-2" width="200" height="150"></canvas>
+                <div class="attr-info">img.crossOrigin = "anonymous"</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 6: Mixed Content -->
+    <div class="test-section">
+        <h2>6. Mixed Content Canvases</h2>
+        <div class="description">
+            Canvases with both local and cross-origin content.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>Local + Tainted (tainted)</h3>
+                <canvas id="mixed-tainted" width="200" height="150"></canvas>
+                <div class="attr-info">Local shapes + cross-origin image = tainted</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Local + data-src</h3>
+                <canvas id="mixed-src" width="200" height="150" 
+                        data-src="https://picsum.photos/id/70/200/150"></canvas>
+                <div class="attr-info">Local shapes + data-src attribute</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 7: Edge Cases -->
+    <div class="test-section">
+        <h2>7. Edge Cases</h2>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>Empty canvas</h3>
+                <canvas id="edge-empty" width="200" height="150"></canvas>
+                <div class="attr-info">Empty canvas (should work)</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Very small</h3>
+                <canvas id="edge-small" width="20" height="20"></canvas>
+                <div class="attr-info">20x20 pixels</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Relative data-src</h3>
+                <canvas id="edge-relative" width="200" height="150" 
+                        data-src="/image.png"></canvas>
+                <div class="attr-info">data-src="/image.png" (relative URL)</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Invalid data-src</h3>
+                <canvas id="edge-invalid" width="200" height="150" 
+                        data-src="not-a-valid-url"></canvas>
+                <div class="attr-info">data-src="not-a-valid-url"</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 8: Dynamic Canvases -->
+    <div class="test-section">
+        <h2>8. Dynamic Canvases</h2>
+        <div class="description">Click buttons to create canvases dynamically.</div>
+        <div>
+            <button onclick="createDynamicTainted()">Create Tainted Canvas</button>
+            <button onclick="createDynamicWithSrc()">Create Canvas with data-src</button>
+            <button onclick="createDynamicNormal()">Create Normal Canvas</button>
+        </div>
+        <div id="dynamic-container" class="canvas-grid" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        // ============================================
+        // Test 1: Normal canvases
+        // ============================================
+        function drawNormalCanvas1() {
+            const canvas = document.getElementById('normal-canvas-1');
+            const ctx = canvas.getContext('2d');
+            
+            const gradient = ctx.createLinearGradient(0, 0, 200, 150);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 200, 150);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Normal Canvas', 100, 75);
+            ctx.font = '14px Arial';
+            ctx.fillText('(Local content only)', 100, 95);
+        }
+
+        function drawNormalCanvas2() {
+            const canvas = document.getElementById('normal-canvas-2');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 200, 150);
+            
+            // Draw various shapes
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(20, 20, 50, 50);
+            
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(120, 45, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.moveTo(100, 130);
+            ctx.lineTo(130, 80);
+            ctx.lineTo(160, 130);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.strokeStyle = '#9b59b6';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(30, 130);
+            ctx.quadraticCurveTo(60, 80, 90, 130);
+            ctx.stroke();
+        }
+
+        function drawNormalCanvas3() {
+            const canvas = document.getElementById('normal-canvas-3');
+            const ctx = canvas.getContext('2d');
+            
+            let frame = 0;
+            function animate() {
+                ctx.fillStyle = '#1a1a2e';
+                ctx.fillRect(0, 0, 200, 150);
+                
+                for (let i = 0; i < 5; i++) {
+                    const x = (frame * 2 + i * 40) % 220 - 10;
+                    const y = 75 + Math.sin((frame + i * 30) * 0.05) * 40;
+                    
+                    ctx.fillStyle = `hsl(${(frame + i * 50) % 360}, 70%, 60%)`;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                frame++;
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // ============================================
+        // Test 2: Tainted canvases
+        // ============================================
+        function drawTaintedCanvas(canvasId, imageUrl) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#999';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading...', 100, 75);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 200, 150);
+                ctx.fillStyle = 'rgba(255,0,0,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔒 Tainted (no CORS)', 5, 17);
+            };
+            img.onerror = function() {
+                ctx.fillStyle = '#f8d7da';
+                ctx.fillRect(0, 0, 200, 150);
+                ctx.fillStyle = '#721c24';
+                ctx.fillText('Failed to load image', 100, 75);
+            };
+            // Use specific image IDs for consistent images
+            img.src = imageUrl;
+        }
+
+        // ============================================
+        // Test 3: Tainted with data-src
+        // ============================================
+        function drawTaintedWithSrc(canvasId) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const srcUrl = canvas.getAttribute('data-src');
+            
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#999';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading...', 100, 75);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 200, 150);
+                ctx.fillStyle = 'rgba(0,150,0,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔗 Has data-src', 5, 17);
+            };
+            img.onerror = function() {
+                ctx.fillStyle = '#fff3cd';
+                ctx.fillRect(0, 0, 200, 150);
+                ctx.fillStyle = '#856404';
+                ctx.fillText('Image failed, but data-src exists', 100, 65);
+                ctx.font = '10px Arial';
+                ctx.fillText(srcUrl.substring(0, 40) + '...', 100, 85);
+            };
+            img.src = srcUrl;
+        }
+
+        // ============================================
+        // Test 4: Various data attributes
+        // ============================================
+        function drawAttrCanvas(canvasId, attrName) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            const srcUrl = canvas.getAttribute(attrName) || canvas.dataset[attrName.replace('data-', '').replace('-', '')];
+            
+            ctx.fillStyle = '#e8f5e9';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#2e7d32';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading...', 100, 75);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 200, 150);
+                ctx.fillStyle = 'rgba(0,100,0,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔗 ' + attrName, 5, 17);
+            };
+            img.onerror = function() {
+                ctx.fillStyle = '#fff3cd';
+                ctx.fillRect(0, 0, 200, 150);
+                ctx.fillStyle = '#856404';
+                ctx.fillText('Image failed, but ' + attrName + ' exists', 100, 75);
+            };
+            if (srcUrl) img.src = srcUrl;
+        }
+
+        function setupDatasetCanvas() {
+            const canvas = document.getElementById('attr-dataset');
+            canvas.dataset.imageUrl = 'https://picsum.photos/id/55/200/150';
+            
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#e3f2fd';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#1565c0';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading...', 100, 75);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 200, 150);
+                ctx.fillStyle = 'rgba(0,0,150,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔗 dataset.imageUrl', 5, 17);
+            };
+            img.onerror = function() {
+                ctx.fillStyle = '#fff3cd';
+                ctx.fillRect(0, 0, 200, 150);
+                ctx.fillStyle = '#856404';
+                ctx.fillText('Image failed, but dataset.imageUrl exists', 100, 75);
+            };
+            img.src = canvas.dataset.imageUrl;
+        }
+
+        // ============================================
+        // Test 5: CORS canvases
+        // ============================================
+        function drawCORSCanvas(canvasId, imageUrl) {
+            const canvas = document.getElementById(canvasId);
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#e3f2fd';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#1565c0';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading with CORS...', 100, 75);
+            
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 200, 150);
+                ctx.fillStyle = 'rgba(0,100,255,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('✅ CORS enabled', 5, 17);
+            };
+            img.onerror = function() {
+                ctx.fillStyle = '#f8d7da';
+                ctx.fillRect(0, 0, 200, 150);
+                ctx.fillStyle = '#721c24';
+                ctx.font = '11px Arial';
+                ctx.fillText('CORS failed or blocked', 100, 65);
+                ctx.font = '10px Arial';
+                ctx.fillText('Server may not allow CORS', 100, 85);
+            };
+            img.src = imageUrl;
+        }
+
+        // ============================================
+        // Test 6: Mixed content
+        // ============================================
+        function drawMixedTainted() {
+            const canvas = document.getElementById('mixed-tainted');
+            const ctx = canvas.getContext('2d');
+            
+            // Draw local content first
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#3498db';
+            ctx.fillRect(10, 10, 40, 40);
+            
+            // Add cross-origin image (taints the canvas)
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 60, 10, 130, 130);
+                ctx.fillStyle = 'rgba(255,0,0,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔒 Mixed = Tainted', 5, 17);
+            };
+            // Use specific image ID for consistency
+            img.src = 'https://picsum.photos/id/80/130/130';
+        }
+
+        function drawMixedWithSrc() {
+            const canvas = document.getElementById('mixed-src');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#2ecc71';
+            ctx.beginPath();
+            ctx.arc(30, 75, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 60, 10, 130, 130);
+                ctx.fillStyle = 'rgba(0,150,0,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText('🔗 Mixed + data-src', 5, 17);
+            };
+            img.src = canvas.getAttribute('data-src');
+        }
+
+        // ============================================
+        // Test 7: Edge cases
+        // ============================================
+        function drawEdgeCases() {
+            // Empty canvas - nothing to draw
+            const empty = document.getElementById('edge-empty');
+            const ctxEmpty = empty.getContext('2d');
+            // Leave it empty/transparent
+            
+            // Small canvas
+            const small = document.getElementById('edge-small');
+            const ctxSmall = small.getContext('2d');
+            ctxSmall.fillStyle = '#e74c3c';
+            ctxSmall.fillRect(0, 0, 10, 10);
+            ctxSmall.fillStyle = '#3498db';
+            ctxSmall.fillRect(10, 10, 10, 10);
+            
+            // Relative URL - show placeholder
+            const relative = document.getElementById('edge-relative');
+            const ctxRel = relative.getContext('2d');
+            ctxRel.fillStyle = '#fff3cd';
+            ctxRel.fillRect(0, 0, 200, 150);
+            ctxRel.fillStyle = '#856404';
+            ctxRel.font = '12px Arial';
+            ctxRel.textAlign = 'center';
+            ctxRel.fillText('Relative URL in data-src', 100, 70);
+            ctxRel.font = '10px monospace';
+            ctxRel.fillText('/image.png', 100, 90);
+            
+            // Invalid URL
+            const invalid = document.getElementById('edge-invalid');
+            const ctxInv = invalid.getContext('2d');
+            ctxInv.fillStyle = '#f8d7da';
+            ctxInv.fillRect(0, 0, 200, 150);
+            ctxInv.fillStyle = '#721c24';
+            ctxInv.font = '12px Arial';
+            ctxInv.textAlign = 'center';
+            ctxInv.fillText('Invalid URL in data-src', 100, 70);
+            ctxInv.font = '10px monospace';
+            ctxInv.fillText('not-a-valid-url', 100, 90);
+        }
+
+        // ============================================
+        // Test 8: Dynamic canvases
+        // ============================================
+        let dynamicCounter = 0;
+        
+        function createDynamicTainted() {
+            const container = document.getElementById('dynamic-container');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'canvas-item';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            canvas.id = 'dynamic-' + (++dynamicCounter);
+            
+            const title = document.createElement('h3');
+            title.textContent = 'Dynamic Tainted #' + dynamicCounter;
+            
+            const attrInfo = document.createElement('div');
+            attrInfo.className = 'attr-info';
+            attrInfo.textContent = 'No data attributes (tainted)';
+            
+            wrapper.appendChild(title);
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(attrInfo);
+            container.appendChild(wrapper);
+            
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#eee';
+            ctx.fillRect(0, 0, 200, 150);
+            
+            const img = new Image();
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, 200, 150);
+                ctx.fillStyle = 'rgba(255,0,0,0.6)';
+                ctx.fillRect(0, 0, 200, 25);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('🔒 Dynamic Tainted', 5, 17);
+            };
+            // Use specific image ID for consistency
+            const imageId = 90 + dynamicCounter;
+            img.src = 'https://picsum.photos/id/' + imageId + '/200/150';
+        }
+
+        function createDynamicWithSrc() {
+            const container = document.getElementById('dynamic-container');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'canvas-item';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            canvas.id = 'dynamic-' + (++dynamicCounter);
+            
+            // Use specific image ID for consistency
+            const imageId = 100 + dynamicCounter;
+            const imgUrl = 'https://picsum.photos/id/' + imageId + '/200/150';
+            canvas.setAttribute('data-src', imgUrl);
+            
+            const title = document.createElement('h3');
+            title.textContent = 'Dynamic with data-src #' + dynamicCounter;
+            
+            const attrInfo = document.createElement('div');
+            attrInfo.className = 'attr-info';
+            attrInfo.textContent = 'data-src="' + imgUrl + '"';
+            
+            wrapper.appendChild(title);
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(attrInfo);
+            container.appendChild(wrapper);
+            
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#d4edda';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#155724';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Has data-src!', 100, 75);
+        }
+
+        function createDynamicNormal() {
+            const container = document.getElementById('dynamic-container');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'canvas-item';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            canvas.id = 'dynamic-' + (++dynamicCounter);
+            
+            const title = document.createElement('h3');
+            title.textContent = 'Dynamic Normal #' + dynamicCounter;
+            
+            const attrInfo = document.createElement('div');
+            attrInfo.className = 'attr-info';
+            attrInfo.textContent = 'No data attributes (normal)';
+            
+            wrapper.appendChild(title);
+            wrapper.appendChild(canvas);
+            wrapper.appendChild(attrInfo);
+            container.appendChild(wrapper);
+            
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 200, 150);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Dynamic Normal', 100, 75);
+        }
+
+        // ============================================
+        // Initialize all canvases on page load
+        // ============================================
+        window.onload = function() {
+            // Test 1: Normal canvases
+            drawNormalCanvas1();
+            drawNormalCanvas2();
+            drawNormalCanvas3();
+            
+            // Test 2: Tainted canvases (use specific IDs for consistent images)
+            drawTaintedCanvas('tainted-canvas-1', 'https://picsum.photos/id/1/200/150');
+            drawTaintedCanvas('tainted-canvas-2', 'https://picsum.photos/id/2/200/150');
+            drawTaintedCanvas('tainted-canvas-3', 'https://picsum.photos/id/3/200/150');
+            
+            // Test 3: Tainted with data-src
+            drawTaintedWithSrc('src-canvas-1');
+            drawTaintedWithSrc('src-canvas-2');
+            drawTaintedWithSrc('src-canvas-3');
+            
+            // Test 4: Various data attributes
+            drawAttrCanvas('attr-source', 'data-source');
+            drawAttrCanvas('attr-url', 'data-url');
+            drawAttrCanvas('attr-original', 'data-original');
+            drawAttrCanvas('attr-image-url', 'data-image-url');
+            setupDatasetCanvas();
+            drawAttrCanvas('attr-multiple', 'data-src');
+            
+            // Test 5: CORS canvases (use specific IDs for consistent images)
+            drawCORSCanvas('cors-canvas-1', 'https://picsum.photos/id/15/200/150');
+            drawCORSCanvas('cors-canvas-2', 'https://picsum.photos/id/16/200/150');
+            
+            // Test 6: Mixed content
+            drawMixedTainted();
+            drawMixedWithSrc();
+            
+            // Test 7: Edge cases
+            drawEdgeCases();
+        };
+    </script>
+</body>
+</html>
