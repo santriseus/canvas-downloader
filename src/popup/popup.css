@@ -1,7 +1,11 @@
 body{
     width: 370px;
+    height: 500px;
     text-align: center;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 body.settings-open {
@@ -9,7 +13,7 @@ body.settings-open {
 }
 
 html {
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 img {
@@ -29,6 +33,8 @@ img {
     padding: 20px;
     flex-direction: column;
     align-items: center;
+    flex: 1;
+    justify-content: center;
 }
 
 .spinner-text {
@@ -188,4 +194,55 @@ input[name="canvas-select"] {
     color: #888;
     margin-top: 5px;
     font-style: italic;
+}
+
+/* Sticky header */
+header.hero {
+    flex-shrink: 0;
+}
+
+/* Sticky table header */
+#table-header {
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* Scrollable main content */
+#main {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+#main::-webkit-scrollbar {
+    width: 8px;
+}
+
+#main::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+#main::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#main::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Sticky footer for tainted canvas warning */
+#footer {
+    flex-shrink: 0;
+}
+
+.tainted-warning {
+    margin-top: 8px;
+    padding: 6px 8px;
+    font-size: 11px;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
 }

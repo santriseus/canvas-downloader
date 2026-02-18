@@ -132,13 +132,15 @@
 
     // Show spinner while collecting canvas information
     let main = document.getElementById('main');
+    let tableHeader = document.getElementById('table-header');
     let spinner = document.getElementById('spinner');
     let spinnerText = document.getElementById('spinner-text');
     main.style.display = 'none';
+    tableHeader.style.display = 'none';
     spinner.style.display = 'flex';
     spinnerText.textContent = 'Collecting canvas information from page...';
 
-    document.getElementsByTagName("section")[0].addEventListener('click', async (event)=>{
+    document.getElementById('table-header').addEventListener('click', async (event)=>{
         if (event.target.tagName !== 'BUTTON')
             return;
         event.preventDefault();
@@ -413,8 +415,8 @@
         spinner.style.display = 'none';
     }, false);
 
-    // Add event listener for checkboxes
-    document.getElementsByTagName("section")[0].addEventListener('change', (event) => {
+    // Add event listener for checkboxes in table header
+    document.getElementById('table-header').addEventListener('change', (event) => {
         if (event.target.type === 'checkbox') {
             if (event.target.id === 'all-toggle') {
                 toggleAllCheckboxes(event.target.checked);
@@ -422,6 +424,14 @@
                 updateAllToggleCheckbox();
                 updateAllButtonsState();
             }
+        }
+    });
+
+    // Add event listener for checkboxes in main content
+    document.getElementById('main').addEventListener('change', (event) => {
+        if (event.target.type === 'checkbox') {
+            updateAllToggleCheckbox();
+            updateAllButtonsState();
         }
     });
 
@@ -434,6 +444,7 @@
             // Hide spinner and show main content
             spinner.style.display = 'none';
             main.style.display = 'block';
+            tableHeader.style.display = 'block';
         }
     });
 
@@ -441,6 +452,7 @@
     let spinnerTimeout = setTimeout(() => {
         spinner.style.display = 'none';
         main.style.display = 'block';
+        tableHeader.style.display = 'block';
         drawContent([]);
     }, 3000);
 
@@ -522,46 +534,53 @@
 
     function drawContent(canvasInfoList){
         let section = document.getElementById('main');
+        let tableHeader = document.getElementById('table-header');
+        let footer = document.getElementById('footer');
 
         if (canvasInfoList.length > 0){
             // Separate available and tainted canvases
             const availableCanvases = canvasInfoList.filter(c => !c.isTainted || c.hasSourceUrl);
             const taintedCanvases = canvasInfoList.filter(c => c.isTainted && !c.hasSourceUrl);
             
-            let html = [];
+            let headerHtml = [];
+            let bodyHtml = [];
 
             if (availableCanvases.length > 0) {
-                html.push("<table class=\"table is-narrow\">");
-                html.push("<tr>");
-                html.push("<th class=\"checkbox-column\">");
-                html.push("</th>");
-                html.push("<th>");
-                html.push("Preview");
-                html.push("</th>");
-                html.push("<th colspan=\"4\">");
-                html.push("Export options");
-                html.push("</th>");
-                html.push("</tr>");
+                // Table header with column names
+                headerHtml.push("<table class=\"table is-narrow\">");
+                headerHtml.push("<tr>");
+                headerHtml.push("<th class=\"checkbox-column\">");
+                headerHtml.push("</th>");
+                headerHtml.push("<th>");
+                headerHtml.push("Preview");
+                headerHtml.push("</th>");
+                headerHtml.push("<th colspan=\"4\">");
+                headerHtml.push("Export options");
+                headerHtml.push("</th>");
+                headerHtml.push("</tr>");
 
-                drawDownloadAll(html, availableCanvases.map(element => element.frameId + '|||' + element.index).join(';;;'));
+                // "All" row as part of sticky header
+                drawDownloadAll(headerHtml, availableCanvases.map(element => element.frameId + '|||' + element.index).join(';;;'));
+                headerHtml.push("</table>");
 
+                // Body table with individual entries
+                bodyHtml.push("<table class=\"table is-narrow\">");
                 // Only draw available canvases
                 availableCanvases.forEach((canvasInfo, index)=>{
-                    drawElement(html, canvasInfo, index);
+                    drawElement(bodyHtml, canvasInfo, index);
                 });
-
-                html.push("</table>");
+                bodyHtml.push("</table>");
             }
 
-            // Show tainted canvas warning at the bottom as sticky footer
+            tableHeader.innerHTML = headerHtml.join('\n');
+            section.innerHTML = bodyHtml.join('\n');
+
+            // Show tainted canvas warning in the footer
             if (taintedCanvases.length > 0) {
-                html.push("<div style=\"position: sticky; bottom: 0; margin-top: 8px; padding: 6px 8px; font-size: 11px; background: #fff3cd; border: 1px solid #ffc107; color: #856404;\">");
-                html.push("<strong>⚠️ " + taintedCanvases.length + " canvas" + (taintedCanvases.length > 1 ? "es" : "") + " not shown</strong> — Cross-origin images cannot be exported due to browser security. ");
-                html.push("<a href=\"https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image\" target=\"_blank\" rel=\"noopener\" style=\"color: #856404; text-decoration: underline;\">Learn more</a>");
-                html.push("</div>");
+                footer.innerHTML = "<div class=\"tainted-warning\"><strong>⚠️ " + taintedCanvases.length + " canvas" + (taintedCanvases.length > 1 ? "es" : "") + " not shown</strong> — Cross-origin images cannot be exported due to browser security. <a href=\"https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image\" target=\"_blank\" rel=\"noopener\" style=\"color: #856404; text-decoration: underline;\">Learn more</a></div>";
+            } else {
+                footer.innerHTML = '';
             }
-
-            section.innerHTML = html.join('\n');
 
             // Initially all checkboxes should be checked
             setTimeout(() => {
@@ -573,7 +592,9 @@
             }, 0);
         }
         else {
-            section.innerText = "No canvas was found on the page.";
+            tableHeader.innerHTML = '';
+            section.innerHTML = "<div class=\"notification\">No canvas was found on the page.</div>";
+            footer.innerHTML = '';
         }
     }
 
