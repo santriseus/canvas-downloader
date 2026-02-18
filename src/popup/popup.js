@@ -629,6 +629,15 @@
             if (availableCanvases.length > 0) {
                 // Table header with column names
                 headerHtml.push("<table class=\"table is-narrow\">");
+                // Add colgroup for consistent column widths (350px total)
+                headerHtml.push("<colgroup>");
+                headerHtml.push("<col style=\"width: 30px;\">");
+                headerHtml.push("<col style=\"width: 90px;\">");
+                headerHtml.push("<col style=\"width: 55px;\">");
+                headerHtml.push("<col style=\"width: 55px;\">");
+                headerHtml.push("<col style=\"width: 55px;\">");
+                headerHtml.push("<col style=\"width: 55px;\">");
+                headerHtml.push("</colgroup>");
                 headerHtml.push("<tr>");
                 headerHtml.push("<th class=\"checkbox-column\">");
                 headerHtml.push("</th>");
@@ -641,11 +650,20 @@
                 headerHtml.push("</tr>");
 
                 // "All" row as part of sticky header
-                drawDownloadAll(headerHtml, availableCanvases.map(element => element.frameId + '|||' + element.index).join(';;;'));
+                drawDownloadAll(headerHtml, availableCanvases.map(element => element.frameId + '|||' + element.index).join(';;;'), availableCanvases.length);
                 headerHtml.push("</table>");
 
                 // Body table with individual entries
                 bodyHtml.push("<table class=\"table is-narrow\">");
+                // Add colgroup for consistent column widths (350px total)
+                bodyHtml.push("<colgroup>");
+                bodyHtml.push("<col style=\"width: 30px;\">");
+                bodyHtml.push("<col style=\"width: 90px;\">");
+                bodyHtml.push("<col style=\"width: 55px;\">");
+                bodyHtml.push("<col style=\"width: 55px;\">");
+                bodyHtml.push("<col style=\"width: 55px;\">");
+                bodyHtml.push("<col style=\"width: 55px;\">");
+                bodyHtml.push("</colgroup>");
                 // Only draw available canvases
                 availableCanvases.forEach((canvasInfo, index)=>{
                     drawElement(bodyHtml, canvasInfo, index);
@@ -744,13 +762,13 @@
         html.push("</tr>");
     }
 
-    function drawDownloadAll(html, data){
+    function drawDownloadAll(html, data, count){
         html.push("<tr class=\"is-selected\">");
         html.push("<td class=\"checkbox-column\">");
         html.push("<input type=\"checkbox\" id=\"all-toggle\" class=\"checkbox-input\" title=\"Toggle all checkboxes\" checked>");
         html.push("</td>");
-        html.push("<td style='text-align: center'>");
-        html.push("<b>All</b>");
+        html.push("<td>");
+        html.push("<b style=\"font-size: 12px;\">All (" + count + ")</b>");
         html.push("</td>");
         html.push("<td>");
         html.push("<button class=\"button is-small all-action-button\" data-canvas-type=\"image/png\" data-canvas-data=\"" + data + "\" title=\"Download All as PNG images.\">PNG</button>");

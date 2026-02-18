@@ -62,14 +62,49 @@ img {
 }
 
 .checkbox-column {
-    width: 40px;
+    width: 30px;
     text-align: center;
     vertical-align: middle;
+}
+
+/* Fixed table layout for consistent column widths between header and body tables */
+#table-header .table,
+#main .table {
+    table-layout: fixed;
+    width: 350px;
+}
+
+/* Ensure all cells have consistent styling */
+#table-header td,
+#table-header th,
+#main td,
+#main th {
+    overflow: hidden;
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* Preview column - left aligned */
+#table-header td:nth-child(2),
+#table-header th:nth-child(2),
+#main td:nth-child(2),
+#main th:nth-child(2) {
+    text-align: left;
+}
+
+/* All buttons in tables have fixed width */
+#table-header .button,
+#main .button {
+    min-width: 50px;
+    width: 50px;
+    padding-left: 4px;
+    padding-right: 4px;
 }
 
 .checkbox-input {
     transform: scale(1.2);
     margin: 0;
+    vertical-align: middle;
 }
 
 #all-toggle {
@@ -217,12 +252,14 @@ header.hero {
 #table-header {
     flex-shrink: 0;
     overflow: hidden;
+    scrollbar-gutter: stable;
 }
 
 /* Scrollable main content */
 #main {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     min-height: 0;
     scrollbar-width: thin;
     scrollbar-color: #888 #f1f1f1;
