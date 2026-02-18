@@ -140,6 +140,87 @@
     spinner.style.display = 'flex';
     spinnerText.textContent = 'Collecting canvas information from page...';
 
+    // Handle single file download/copy action
+    async function handleSingleFileAction(button) {
+        let main = document.getElementById('main');
+        main.style.display = 'none';
+        let spinner = document.getElementById('spinner');
+        let spinnerText = document.getElementById('spinner-text');
+        spinner.style.display = 'flex';
+        
+        if (button.dataset.canvasCopy) {
+            spinnerText.textContent = 'Copying...';
+        } else {
+            spinnerText.textContent = 'Saving...';
+        }
+        
+        // Get canvas content
+        let canvasResult = await getCanvasContent({
+            frame: button.dataset.canvasFrame,
+            index: button.dataset.canvasIndex,
+            type: button.dataset.canvasType,
+        });
+        
+        // Handle case where canvas data is not available
+        if (!canvasResult || !canvasResult.dataURL) {
+            main.style.display = 'block';
+            spinner.style.display = 'none';
+            return;
+        }
+        
+        let dataURL = canvasResult.dataURL;
+        const hasSourceUrl = canvasResult.hasSourceUrl;
+        
+        if (button.dataset.canvasCopy) {
+            if (hasSourceUrl) {
+                // Cannot copy source URL to clipboard as image
+                button.classList.add('is-danger');
+                button.innerText = 'N/A';
+                setTimeout(() => {
+                    button.classList.remove('is-danger');
+                    button.innerText = 'COPY';
+                }, 1000);
+            } else {
+                await copyDataUrlToClipboard(dataURL);
+                button.classList.add('is-success');
+                button.innerText = 'COPIED!';
+                setTimeout(() => {
+                    button.classList.remove('is-success');
+                    button.innerText = 'COPY';
+                }, 1000);
+            }
+        } else {
+            let useDefaultLocation = await getUseDefaultLocation();
+            let useTimestamp = await getTimestampPrefix();
+            let prefix = useTimestamp ? getFilePrefix() : 'canvas';
+            console.log('useDefaultLocation:', useDefaultLocation, 'saveAs:', !useDefaultLocation);
+            
+            // Determine file extension
+            let extension;
+            if (hasSourceUrl) {
+                // Extract extension from source URL or default to png
+                try {
+                    const urlPath = new URL(dataURL).pathname;
+                    const ext = urlPath.split('.').pop().toLowerCase();
+                    extension = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) ? ext : 'png';
+                } catch (e) {
+                    extension = 'png';
+                }
+            } else {
+                extension = button.dataset.canvasType.substring(6);
+            }
+            
+            await chrome.downloads.download({
+                url: dataURL,
+                filename: `${prefix}.` + extension,
+                saveAs: !useDefaultLocation
+            });
+        }
+        
+        main.style.display = 'block';
+        spinner.style.display = 'none';
+    }
+
     document.getElementById('table-header').addEventListener('click', async (event)=>{
         if (event.target.tagName !== 'BUTTON')
             return;
@@ -340,79 +421,22 @@
                 saveAs: !useDefaultLocation
             });
         }
-        else{
-            // Get canvas content
-            if (event.target.dataset.canvasCopy){
-                spinnerText.textContent = 'Copying...';
-            } else {
-                spinnerText.textContent = 'Saving...';
-            }
-            // Get canvas content
-            let canvasResult = await getCanvasContent( {
-                frame:event.target.dataset.canvasFrame,
-                index: event.target.dataset.canvasIndex,
-                type: event.target.dataset.canvasType,
-            });
-            
-            // Handle case where canvas data is not available
-            if (!canvasResult || !canvasResult.dataURL) {
-                main.style.display = 'block';
-                spinner.style.display = 'none';
-                return;
-            }
-            
-            let dataURL = canvasResult.dataURL;
-            const hasSourceUrl = canvasResult.hasSourceUrl;
-            
-            if (event.target.dataset.canvasCopy){
-                if (hasSourceUrl) {
-                    // Cannot copy source URL to clipboard as image
-                    event.target.classList.add('is-danger');
-                    event.target.innerText = 'N/A';
-                    setTimeout(()=>{
-                        event.target.classList.remove('is-danger');
-                        event.target.innerText = 'COPY';
-                    }, 1000);
-                } else {
-                    await copyDataUrlToClipboard(dataURL);
-                    event.target.classList.add('is-success');
-                    event.target.innerText = 'COPIED!';
-                    setTimeout(()=>{
-                        event.target.classList.remove('is-success');
-                        event.target.innerText = 'COPY';
-                    }, 1000);
-                }
-            } else {
-                let useDefaultLocation = await getUseDefaultLocation();
-                let useTimestamp = await getTimestampPrefix();
-                let prefix = useTimestamp ? getFilePrefix() : 'canvas';
-                console.log('useDefaultLocation:', useDefaultLocation, 'saveAs:', !useDefaultLocation);
-                
-                // Determine file extension
-                let extension;
-                if (hasSourceUrl) {
-                    // Extract extension from source URL or default to png
-                    try {
-                        const urlPath = new URL(dataURL).pathname;
-                        const ext = urlPath.split('.').pop().toLowerCase();
-                        extension = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) ? ext : 'png';
-                    } catch (e) {
-                        extension = 'png';
-                    }
-                } else {
-                    extension = event.target.dataset.canvasType.substring(6);
-                }
-                
-                await chrome.downloads.download({
-                    url: dataURL,
-                    filename: `${prefix}.` + extension,
-                    saveAs: !useDefaultLocation
-                });
-            }
-        }
 
         main.style.display = 'block';
         spinner.style.display = 'none';
+    }, false);
+
+    // Add event listener for single file download buttons in main section
+    document.getElementById('main').addEventListener('click', async (event) => {
+        if (event.target.tagName !== 'BUTTON')
+            return;
+        event.preventDefault();
+        
+        // Only handle single file buttons (have canvas-frame attribute)
+        if (!event.target.dataset.canvasFrame)
+            return;
+        
+        await handleSingleFileAction(event.target);
     }, false);
 
     // Add event listener for checkboxes in table header
