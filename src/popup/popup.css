@@ -44,6 +44,18 @@ img {
     text-align: center;
 }
 
+/* Notification message */
+.notification {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 15px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}
+
 .fixed-size {
     width: 55px;
     text-align: center;
