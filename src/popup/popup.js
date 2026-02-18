@@ -633,10 +633,10 @@
                 headerHtml.push("<colgroup>");
                 headerHtml.push("<col style=\"width: 30px;\">");
                 headerHtml.push("<col style=\"width: 90px;\">");
-                headerHtml.push("<col style=\"width: 55px;\">");
-                headerHtml.push("<col style=\"width: 55px;\">");
-                headerHtml.push("<col style=\"width: 55px;\">");
-                headerHtml.push("<col style=\"width: 55px;\">");
+                headerHtml.push("<col style=\"width: 60px;\">");
+                headerHtml.push("<col style=\"width: 60px;\">");
+                headerHtml.push("<col style=\"width: 60px;\">");
+                headerHtml.push("<col style=\"width: 65px;\">");
                 headerHtml.push("</colgroup>");
                 headerHtml.push("<tr>");
                 headerHtml.push("<th class=\"checkbox-column\">");
@@ -659,10 +659,10 @@
                 bodyHtml.push("<colgroup>");
                 bodyHtml.push("<col style=\"width: 30px;\">");
                 bodyHtml.push("<col style=\"width: 90px;\">");
-                bodyHtml.push("<col style=\"width: 55px;\">");
-                bodyHtml.push("<col style=\"width: 55px;\">");
-                bodyHtml.push("<col style=\"width: 55px;\">");
-                bodyHtml.push("<col style=\"width: 55px;\">");
+                bodyHtml.push("<col style=\"width: 60px;\">");
+                bodyHtml.push("<col style=\"width: 60px;\">");
+                bodyHtml.push("<col style=\"width: 60px;\">");
+                bodyHtml.push("<col style=\"width: 65px;\">");
                 bodyHtml.push("</colgroup>");
                 // Only draw available canvases
                 availableCanvases.forEach((canvasInfo, index)=>{
