@@ -95,6 +95,33 @@
         .expected.works { background: #d4edda; color: #155724; }
         .expected.fails { background: #f8d7da; color: #721c24; }
         .expected.url { background: #fff3cd; color: #856404; }
+        .image-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: #fafafa;
+        }
+        .image-item h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        .image-item img {
+            display: block;
+            margin: 0 auto 10px auto;
+            border: 2px solid #ccc;
+            background: #fff;
+            max-width: 100%;
+        }
+        .image-item .attr-info {
+            font-size: 11px;
+            color: #666;
+            font-family: monospace;
+            background: #eee;
+            padding: 5px;
+            border-radius: 4px;
+            word-break: break-all;
+        }
     </style>
 </head>
 <body>
@@ -310,6 +337,110 @@
             <button onclick="createDynamicNormal()">Create Normal Canvas</button>
         </div>
         <div id="dynamic-container" class="canvas-grid" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- Test 9: Blob URL Examples -->
+    <div class="test-section">
+        <h2>9. Blob URL Canvases <span class="expected works">Should Work ✅</span></h2>
+        <div class="description">
+            Canvases that use blob URLs created from <code>URL.createObjectURL()</code>.
+            <br><strong>Expected:</strong> Normal canvases with blob content should export normally.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>Blob Image Source</h3>
+                <canvas id="blob-canvas-1" width="200" height="150"></canvas>
+                <div class="attr-info">Image drawn from blob URL</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Canvas to Blob to Canvas</h3>
+                <canvas id="blob-canvas-2" width="200" height="150"></canvas>
+                <div class="attr-info">Canvas → Blob → New Canvas</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Blob with data-src</h3>
+                <canvas id="blob-canvas-3" width="200" height="150" 
+                        data-src="blob:placeholder"></canvas>
+                <div class="attr-info">data-src="blob:..." (blob URL)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 10: Blob URL Edge Cases -->
+    <div class="test-section">
+        <h2>10. Blob URL Edge Cases</h2>
+        <div class="description">
+            Testing various blob URL scenarios and edge cases.
+        </div>
+        <div class="canvas-grid">
+            <div class="canvas-item">
+                <h3>Revoked Blob URL</h3>
+                <canvas id="blob-revoked" width="200" height="150" 
+                        data-src="blob:revoked"></canvas>
+                <div class="attr-info">data-src points to revoked blob URL</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Multiple Blob Draws</h3>
+                <canvas id="blob-multiple" width="200" height="150"></canvas>
+                <div class="attr-info">Multiple blob images drawn</div>
+            </div>
+            <div class="canvas-item">
+                <h3>Blob from Fetch</h3>
+                <canvas id="blob-fetch" width="200" height="150"></canvas>
+                <div class="attr-info">Blob created from fetch response</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 11: Blob URL Images (not canvas) -->
+    <div class="test-section">
+        <h2>11. Blob URL Images <span class="expected works">Should Work ✅</span></h2>
+        <div class="description">
+            Regular <code>&lt;img&gt;</code> elements with blob URLs as src. Used for testing blob detection mode.
+            <br><strong>Expected:</strong> Extension should detect these as blob images and allow download.
+        </div>
+        <div class="canvas-grid">
+            <div class="image-item">
+                <h3>Blob Image #1</h3>
+                <img id="blob-img-1" width="200" height="150" alt="Blob image">
+                <div class="attr-info">src="blob:..." (generated from canvas)</div>
+            </div>
+            <div class="image-item">
+                <h3>Blob Image #2</h3>
+                <img id="blob-img-2" width="200" height="150" alt="Blob image">
+                <div class="attr-info">src="blob:..." (generated from gradient)</div>
+            </div>
+            <div class="image-item">
+                <h3>Blob Image #3</h3>
+                <img id="blob-img-3" width="200" height="150" alt="Blob image">
+                <div class="attr-info">src="blob:..." (fetched and converted)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test 12: Blob URL Images Edge Cases -->
+    <div class="test-section">
+        <h2>12. Blob URL Images Edge Cases</h2>
+        <div class="description">
+            Testing edge cases for blob URL images.
+        </div>
+        <div class="canvas-grid">
+            <div class="image-item">
+                <h3>Revoked Blob Image</h3>
+                <img id="blob-img-revoked" width="200" height="150" alt="Revoked blob">
+                <div class="attr-info">Blob URL revoked after assignment</div>
+            </div>
+            <div class="image-item">
+                <h3>Small Blob Image</h3>
+                <img id="blob-img-small" width="50" height="50" alt="Small blob">
+                <div class="attr-info">50x50 pixel blob image</div>
+            </div>
+            <div class="image-item">
+                <h3>Blob with data-src</h3>
+                <img id="blob-img-datasrc" width="200" height="150" alt="Blob with data-src">
+                <div class="attr-info">Has both blob src and data-src attribute</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -773,6 +904,462 @@
         }
 
         // ============================================
+        // Test 9: Blob URL canvases
+        // ============================================
+        function drawBlobCanvas1() {
+            const canvas = document.getElementById('blob-canvas-1');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#e8f5e9';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#2e7d32';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Creating blob...', 100, 75);
+            
+            // Create a simple image blob
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 200;
+            tempCanvas.height = 150;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw gradient on temp canvas
+            const gradient = tempCtx.createLinearGradient(0, 0, 200, 150);
+            gradient.addColorStop(0, '#ff6b6b');
+            gradient.addColorStop(0.5, '#4ecdc4');
+            gradient.addColorStop(1, '#45b7d1');
+            tempCtx.fillStyle = gradient;
+            tempCtx.fillRect(0, 0, 200, 150);
+            
+            // Add some shapes
+            tempCtx.fillStyle = 'rgba(255,255,255,0.3)';
+            tempCtx.beginPath();
+            tempCtx.arc(100, 75, 50, 0, Math.PI * 2);
+            tempCtx.fill();
+            
+            tempCtx.fillStyle = 'white';
+            tempCtx.font = 'bold 14px Arial';
+            tempCtx.textAlign = 'center';
+            tempCtx.fillText('Blob Image', 100, 80);
+            
+            // Convert to blob and draw
+            tempCanvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, 200, 150);
+                    ctx.fillStyle = 'rgba(0,100,0,0.6)';
+                    ctx.fillRect(0, 0, 200, 25);
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(' Blob URL Source', 5, 17);
+                    
+                    // Clean up the blob URL after drawing
+                    // URL.revokeObjectURL(blobUrl);
+                };
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        function drawBlobCanvas2() {
+            const canvas = document.getElementById('blob-canvas-2');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#f3e5f5';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#7b1fa2';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Canvas to Blob cycle...', 100, 75);
+            
+            // Create original canvas
+            const original = document.createElement('canvas');
+            original.width = 200;
+            original.height = 150;
+            const origCtx = original.getContext('2d');
+            
+            // Draw pattern
+            origCtx.fillStyle = '#9c27b0';
+            origCtx.fillRect(0, 0, 200, 150);
+            for (let i = 0; i < 10; i++) {
+                origCtx.fillStyle = `rgba(255,255,255,${0.1 + i * 0.05})`;
+                origCtx.fillRect(i * 20, 0, 10, 150);
+            }
+            origCtx.fillStyle = 'white';
+            origCtx.font = 'bold 12px Arial';
+            origCtx.textAlign = 'center';
+            origCtx.fillText('Original Canvas', 100, 75);
+            
+            // Convert to blob, then back to image, then draw
+            original.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, 200, 150);
+                    ctx.fillStyle = 'rgba(100,0,100,0.6)';
+                    ctx.fillRect(0, 0, 200, 25);
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(' Canvas Blob Canvas', 5, 17);
+                };
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        function drawBlobCanvas3() {
+            const canvas = document.getElementById('blob-canvas-3');
+            const ctx = canvas.getContext('2d');
+            
+            // Create a blob and set it as data-src
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 200;
+            tempCanvas.height = 150;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // Draw content
+            tempCtx.fillStyle = '#ff9800';
+            tempCtx.fillRect(0, 0, 200, 150);
+            tempCtx.fillStyle = 'white';
+            tempCtx.font = 'bold 14px Arial';
+            tempCtx.textAlign = 'center';
+            tempCtx.fillText('Blob in data-src', 100, 80);
+            
+            tempCanvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                canvas.setAttribute('data-src', blobUrl);
+                
+                // Draw the blob image
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, 200, 150);
+                    ctx.fillStyle = 'rgba(200,100,0,0.6)';
+                    ctx.fillRect(0, 0, 200, 25);
+                    ctx.fillStyle = 'white';
+                    ctx.font = 'bold 11px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(' Blob in data-src', 5, 17);
+                };
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        // ============================================
+        // Test 10: Blob URL edge cases
+        // ============================================
+        function drawBlobRevoked() {
+            const canvas = document.getElementById('blob-revoked');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#fff3cd';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#856404';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Revoked Blob URL', 100, 70);
+            ctx.font = '10px Arial';
+            ctx.fillText('data-src points to revoked blob', 100, 90);
+            
+            // Create and immediately revoke a blob
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 200;
+            tempCanvas.height = 150;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.fillStyle = '#ff5722';
+            tempCtx.fillRect(0, 0, 200, 150);
+            
+            tempCanvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                canvas.setAttribute('data-src', blobUrl);
+                
+                // Revoke immediately
+                URL.revokeObjectURL(blobUrl);
+                
+                // Try to load - will fail
+                const img = new Image();
+                img.onload = function() {
+                    ctx.drawImage(img, 0, 0, 200, 150);
+                };
+                img.onerror = function() {
+                    ctx.fillStyle = '#f8d7da';
+                    ctx.fillRect(0, 0, 200, 150);
+                    ctx.fillStyle = '#721c24';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('Blob URL was revoked', 100, 75);
+                };
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        function drawBlobMultiple() {
+            const canvas = document.getElementById('blob-multiple');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#e0f7fa';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#006064';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Loading multiple blobs...', 100, 75);
+            
+            const blobUrls = [];
+            let loadedCount = 0;
+            
+            // Create multiple small blob images
+            const colors = ['#e91e63', '#2196f3', '#4caf50'];
+            const positions = [[10, 10], [70, 10], [130, 10]];
+            
+            colors.forEach(function(color, index) {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = 60;
+                tempCanvas.height = 130;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                tempCtx.fillStyle = color;
+                tempCtx.fillRect(0, 0, 60, 130);
+                tempCtx.fillStyle = 'white';
+                tempCtx.font = 'bold 10px Arial';
+                tempCtx.textAlign = 'center';
+                tempCtx.fillText('Blob ' + (index + 1), 30, 70);
+                
+                tempCanvas.toBlob(function(blob) {
+                    const blobUrl = URL.createObjectURL(blob);
+                    blobUrls.push(blobUrl);
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        ctx.drawImage(img, positions[index][0], positions[index][1], 60, 130);
+                        loadedCount++;
+                        
+                        if (loadedCount === 3) {
+                            ctx.fillStyle = 'rgba(0,100,100,0.6)';
+                            ctx.fillRect(0, 0, 200, 25);
+                            ctx.fillStyle = 'white';
+                            ctx.font = 'bold 11px Arial';
+                            ctx.textAlign = 'left';
+                            ctx.fillText(' Multiple Blobs', 5, 17);
+                        }
+                    };
+                    img.src = blobUrl;
+                }, 'image/png');
+            });
+        }
+
+        function drawBlobFetch() {
+            const canvas = document.getElementById('blob-fetch');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#e8eaf6';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = '#3f51b5';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Fetching image as blob...', 100, 75);
+            
+            // Fetch an image and convert to blob
+            fetch('https://picsum.photos/id/65/200/150')
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    const img = new Image();
+                    img.onload = function() {
+                        ctx.drawImage(img, 0, 0, 200, 150);
+                        ctx.fillStyle = 'rgba(50,50,150,0.6)';
+                        ctx.fillRect(0, 0, 200, 25);
+                        ctx.fillStyle = 'white';
+                        ctx.font = 'bold 11px Arial';
+                        ctx.textAlign = 'left';
+                        ctx.fillText(' Fetched as Blob', 5, 17);
+                    };
+                    img.onerror = function() {
+                        ctx.fillStyle = '#f8d7da';
+                        ctx.fillRect(0, 0, 200, 150);
+                        ctx.fillStyle = '#721c24';
+                        ctx.font = '11px Arial';
+                        ctx.fillText('Fetch failed (CORS)', 100, 75);
+                    };
+                    img.src = blobUrl;
+                })
+                .catch(error => {
+                    ctx.fillStyle = '#f8d7da';
+                    ctx.fillRect(0, 0, 200, 150);
+                    ctx.fillStyle = '#721c24';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('Fetch error: ' + error.message, 100, 75);
+                });
+        }
+
+        // ============================================
+        // Test 11: Blob URL Images (not canvas)
+        // ============================================
+        function createBlobImage1() {
+            const img = document.getElementById('blob-img-1');
+            
+            // Create a canvas to generate blob
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw content
+            ctx.fillStyle = '#e91e63';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Blob Image #1', 100, 75);
+            
+            // Convert to blob and set as image source
+            canvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        function createBlobImage2() {
+            const img = document.getElementById('blob-img-2');
+            
+            // Create a canvas with gradient
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw gradient
+            const gradient = ctx.createLinearGradient(0, 0, 200, 150);
+            gradient.addColorStop(0, '#667eea');
+            gradient.addColorStop(1, '#764ba2');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 200, 150);
+            
+            // Add text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Blob Image #2', 100, 75);
+            
+            // Convert to blob and set as image source
+            canvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        function createBlobImage3() {
+            const img = document.getElementById('blob-img-3');
+            
+            // Show loading state
+            img.style.background = '#e8eaf6';
+            img.alt = 'Loading...';
+            
+            // Fetch image and convert to blob
+            fetch('https://picsum.photos/id/75/200/150')
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    img.src = blobUrl;
+                })
+                .catch(error => {
+                    // Create error placeholder as blob
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 200;
+                    canvas.height = 150;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#f8d7da';
+                    ctx.fillRect(0, 0, 200, 150);
+                    ctx.fillStyle = '#721c24';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Fetch failed', 100, 75);
+                    
+                    canvas.toBlob(function(blob) {
+                        img.src = URL.createObjectURL(blob);
+                    }, 'image/png');
+                });
+        }
+
+        // ============================================
+        // Test 12: Blob URL Images Edge Cases
+        // ============================================
+        function createRevokedBlobImage() {
+            const img = document.getElementById('blob-img-revoked');
+            
+            // Create a canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ff9800';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('This will be revoked', 100, 75);
+            
+            canvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                img.src = blobUrl;
+                
+                // Revoke immediately after assignment
+                // Note: Image may still load if browser has cached it
+                setTimeout(function() {
+                    URL.revokeObjectURL(blobUrl);
+                }, 100);
+            }, 'image/png');
+        }
+
+        function createSmallBlobImage() {
+            const img = document.getElementById('blob-img-small');
+            
+            // Create small canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 50;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw pattern
+            ctx.fillStyle = '#4caf50';
+            ctx.fillRect(0, 0, 50, 50);
+            ctx.fillStyle = '#2e7d32';
+            ctx.fillRect(10, 10, 30, 30);
+            ctx.fillStyle = '#81c784';
+            ctx.fillRect(20, 20, 10, 10);
+            
+            canvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                img.src = blobUrl;
+            }, 'image/png');
+        }
+
+        function createBlobImageWithDataSrc() {
+            const img = document.getElementById('blob-img-datasrc');
+            
+            // Create a canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = 200;
+            canvas.height = 150;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#9c27b0';
+            ctx.fillRect(0, 0, 200, 150);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Blob + data-src', 100, 75);
+            
+            canvas.toBlob(function(blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                img.src = blobUrl;
+                // Also set data-src attribute
+                img.setAttribute('data-src', 'https://picsum.photos/id/85/200/150');
+            }, 'image/png');
+        }
+
+        // ============================================
         // Initialize all canvases on page load
         // ============================================
         window.onload = function() {
@@ -809,6 +1396,26 @@
             
             // Test 7: Edge cases
             drawEdgeCases();
+            
+            // Test 9: Blob URL canvases
+            drawBlobCanvas1();
+            drawBlobCanvas2();
+            drawBlobCanvas3();
+            
+            // Test 10: Blob URL edge cases
+            drawBlobRevoked();
+            drawBlobMultiple();
+            drawBlobFetch();
+            
+            // Test 11: Blob URL Images
+            createBlobImage1();
+            createBlobImage2();
+            createBlobImage3();
+            
+            // Test 12: Blob URL Images Edge Cases
+            createRevokedBlobImage();
+            createSmallBlobImage();
+            createBlobImageWithDataSrc();
         };
     </script>
 </body>

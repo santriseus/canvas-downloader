@@ -8,10 +8,12 @@
 
     let frameId = generateId(20);
     let extractSourceUrls = false; // Default: disabled
+    let collectBlobImages = false; // Default: disabled
 
     // Load setting from storage
-    chrome.storage.local.get(['extractSourceUrls'], function(result) {
+    chrome.storage.local.get(['extractSourceUrls', 'collectBlobImages'], function(result) {
         extractSourceUrls = result.extractSourceUrls === true;
+        collectBlobImages = result.collectBlobImages === true;
     });
 
     // Listen for setting changes
@@ -19,15 +21,19 @@
         if (changes.extractSourceUrls) {
             extractSourceUrls = changes.extractSourceUrls.newValue === true;
         }
+        if (changes.collectBlobImages) {
+            collectBlobImages = changes.collectBlobImages.newValue === true;
+        }
     });
 
     chrome.runtime.onMessage.addListener(
         function (request, sender, sendResponse) {
             switch (request.command) {
                 case COMMANDS.GET_CANVAS_INFO_LIST:
-                    // Update setting before processing
-                    chrome.storage.local.get(['extractSourceUrls'], function(result) {
+                    // Update settings before processing
+                    chrome.storage.local.get(['extractSourceUrls', 'collectBlobImages'], function(result) {
                         extractSourceUrls = result.extractSourceUrls === true;
+                        collectBlobImages = result.collectBlobImages === true;
                         let list = getCanvasInfoList().then((list) => {
                             chrome.runtime.sendMessage(chrome.runtime.id, {canvasInfoList: list});
                         }).catch(err => {
@@ -38,9 +44,15 @@
                     case COMMANDS.GET_CANVAS_DATA:
                         if (request.data.frame === frameId){
                             try {
-                                const canvas = document.getElementsByTagName("canvas")[request.data.index];
-                                const result = getCanvasDataWithSource(canvas, request.data.type);
-                                sendResponse(result);
+                                // Check if this is a BLOB image request
+                                if (request.data.isBlobImage) {
+                                    const result = getBlobImageData(request.data.blobIndex);
+                                    sendResponse(result);
+                                } else {
+                                    const canvas = document.getElementsByTagName("canvas")[request.data.index];
+                                    const result = getCanvasDataWithSource(canvas, request.data.type);
+                                    sendResponse(result);
+                                }
                             } catch (e) {
                                 console.error('Error getting canvas data:', e);
                                 sendResponse({
@@ -49,6 +61,7 @@
                                     frameId: frameId,
                                     isTainted: true,
                                     hasSourceUrl: false,
+                                    isBlobUrl: false,
                                     error: e.message
                                 });
                             }
@@ -65,6 +78,58 @@
         // Include all canvases - we'll handle tainted ones via data-src fallback
         let canvasList = Array.from(document.getElementsByTagName("canvas"));
         return canvasList;
+    }
+
+    /**
+     * Get all images with BLOB URLs from the page
+     */
+    function getBlobImageElementsList() {
+        const blobImages = [];
+        
+        // Find all img elements with blob: URLs
+        const imgElements = document.getElementsByTagName('img');
+        for (let img of imgElements) {
+            if (img.src && img.src.startsWith('blob:')) {
+                blobImages.push({
+                    element: img,
+                    blobUrl: img.src
+                });
+            }
+        }
+        
+        return blobImages;
+    }
+
+    /**
+     * Store blob URLs for later retrieval
+     */
+    let blobImageStore = [];
+
+    /**
+     * Get BLOB image data by index from the store
+     */
+    function getBlobImageData(blobIndex) {
+        if (blobIndex < 0 || blobIndex >= blobImageStore.length) {
+            return {
+                type: 'error',
+                dataURL: null,
+                frameId: frameId,
+                isTainted: true,
+                hasSourceUrl: false,
+                isBlobUrl: true,
+                error: 'Invalid BLOB image index'
+            };
+        }
+        
+        const blobInfo = blobImageStore[blobIndex];
+        return {
+            type: 'blobUrl',
+            dataURL: blobInfo.blobUrl,
+            frameId: frameId,
+            isTainted: false,
+            hasSourceUrl: false,
+            isBlobUrl: true
+        };
     }
 
     /**
@@ -118,13 +183,10 @@
     async function getCanvasInfoList(){
 
         let canvasList = getCanvasElementsList();
-
-        if (canvasList.length < 1)
-            return [];
-
+        let result = [];
         let hiddenCanvas = document.createElement('canvas');
 
-        let result = [];
+        // Process canvas elements
         for (let index = 0; index < canvasList.length; index++) {
             let canvas = canvasList[index];
             
@@ -139,6 +201,7 @@
                 height: canvas.height,
                 isTainted: tainted,
                 hasSourceUrl: !!sourceUrl,
+                isBlobUrl: false,
                 sourceUrl: sourceUrl,
                 dataURL: null
             };
@@ -179,6 +242,36 @@
             }
 
             result.push(canvasData);
+        }
+
+        // Collect BLOB images if setting is enabled
+        if (collectBlobImages) {
+            // Reset blob store
+            blobImageStore = [];
+            
+            const blobImages = getBlobImageElementsList();
+            for (let i = 0; i < blobImages.length; i++) {
+                const blobInfo = blobImages[i];
+                const img = blobInfo.element;
+                
+                // Store blob info for later retrieval
+                blobImageStore.push(blobInfo);
+                
+                let blobData = {
+                    frameId: frameId,
+                    index: result.length, // Use overall index in result array
+                    blobIndex: i, // Index within blob store
+                    width: img.naturalWidth || img.width,
+                    height: img.naturalHeight || img.height,
+                    isTainted: false,
+                    hasSourceUrl: false,
+                    isBlobUrl: true,
+                    dataURL: blobInfo.blobUrl,
+                    type: 'blobUrl'
+                };
+                
+                result.push(blobData);
+            }
         }
 
         return result;

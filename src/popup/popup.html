@@ -52,6 +52,13 @@
                     </label>
                     <p class="settings-hint">Try to extract images from data-src, data-source, data-url attributes on tainted canvases. This can help recover images from cross-origin canvases when the original URL is available.</p>
                 </div>
+                <div class="settings-section">
+                    <label class="settings-label">
+                        <input type="checkbox" id="setting-collect-blob-images" class="settings-checkbox">
+                        Collect BLOB images
+                    </label>
+                    <p class="settings-hint">Collect images from the page that are loaded via BLOB URLs (blob:...). These are typically images created dynamically or loaded through JavaScript. Note: BLOB images cannot be copied to clipboard directly.</p>
+                </div>
             </div>
         </div>
     </div>
