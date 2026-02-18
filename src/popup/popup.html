@@ -45,6 +45,13 @@
                     </label>
                     <p class="settings-hint">Use timestamp (YYYYMMDD_HHMMSS) instead of "canvas" prefix for file names. Provides better sorting capabilities and helps organize files created chronologically.</p>
                 </div>
+                <div class="settings-section">
+                    <label class="settings-label">
+                        <input type="checkbox" id="setting-extract-source-urls" class="settings-checkbox">
+                        Extract images from source URLs
+                    </label>
+                    <p class="settings-hint">Try to extract images from data-src, data-source, data-url attributes on tainted canvases. This can help recover images from cross-origin canvases when the original URL is available.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -56,6 +63,7 @@
     </section>
     <section id="spinner" class="container">
         <div class="spinner"></div>
+        <div id="spinner-text" class="spinner-text">Loading...</div>
     </section>
     <script type="text/javascript" src="vendor/jszip.min.js"></script>
     <script type="text/javascript" src="vendor/jspdf.umd.min.js"></script>

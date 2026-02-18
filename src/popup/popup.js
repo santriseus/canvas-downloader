@@ -14,7 +14,7 @@
 
     // Load saved settings
     async function loadSettings() {
-        const settings = await chrome.storage.local.get(['useDefaultLocation', 'multipleDownloads', 'timestampPrefix']);
+        const settings = await chrome.storage.local.get(['useDefaultLocation', 'multipleDownloads', 'timestampPrefix', 'extractSourceUrls']);
         console.log('Loading settings:', settings);
         
         if (settings.useDefaultLocation !== undefined) {
@@ -26,6 +26,9 @@
         if (settings.timestampPrefix !== undefined) {
             document.getElementById('setting-timestamp-prefix').checked = settings.timestampPrefix;
         }
+        if (settings.extractSourceUrls !== undefined) {
+            document.getElementById('setting-extract-source-urls').checked = settings.extractSourceUrls;
+        }
     }
 
     // Save settings
@@ -33,7 +36,8 @@
         const settings = {
             useDefaultLocation: document.getElementById('setting-default-location').checked,
             multipleDownloads: document.getElementById('setting-multiple-downloads').checked,
-            timestampPrefix: document.getElementById('setting-timestamp-prefix').checked
+            timestampPrefix: document.getElementById('setting-timestamp-prefix').checked,
+            extractSourceUrls: document.getElementById('setting-extract-source-urls').checked
         };
         console.log('Saving settings:', settings);
         
@@ -64,6 +68,12 @@
     async function getTimestampPrefix() {
         const settings = await chrome.storage.local.get(['timestampPrefix']);
         return settings.timestampPrefix === true;
+    }
+
+    // Get extractSourceUrls setting
+    async function getExtractSourceUrls() {
+        const settings = await chrome.storage.local.get(['extractSourceUrls']);
+        return settings.extractSourceUrls === true;
     }
 
     // Open settings modal
@@ -99,6 +109,11 @@
         await saveSettings();
     });
 
+    document.getElementById('setting-extract-source-urls').addEventListener('change', async (event) => {
+        console.log('Extract source URLs changed to:', event.target.checked);
+        await saveSettings();
+    });
+
     // Helper function to get file prefix
     function getFilePrefix(counter) {
         const now = new Date();
@@ -115,6 +130,14 @@
     await loadSettings();
     console.log('Popup initialized');
 
+    // Show spinner while collecting canvas information
+    let main = document.getElementById('main');
+    let spinner = document.getElementById('spinner');
+    let spinnerText = document.getElementById('spinner-text');
+    main.style.display = 'none';
+    spinner.style.display = 'flex';
+    spinnerText.textContent = 'Collecting canvas information from page...';
+
     document.getElementsByTagName("section")[0].addEventListener('click', async (event)=>{
         if (event.target.tagName !== 'BUTTON')
             return;
@@ -122,9 +145,11 @@
         let main = document.getElementById('main');
         main.style.display = 'none';
         let spinner = document.getElementById('spinner');
-        spinner.style.display = 'block';
+        let spinnerText = document.getElementById('spinner-text');
+        spinner.style.display = 'flex';
         
         if (event.target.dataset.canvasData){
+            spinnerText.textContent = 'Generating archive...';
             let counter = 1;
             let zip = new JSZip();
             let entries;
@@ -151,23 +176,61 @@
             const paddingLength = String(totalImages).length;
             
             for (let entry of entries){
-                let dataURL = await getCanvasContent( {
+                let canvasResult = await getCanvasContent( {
                     frame:entry[0],
                     index: entry[1],
                     type: event.target.dataset.canvasType,
                 });
                 
+                // Skip tainted canvases without source URL
+                if (!canvasResult || !canvasResult.dataURL) {
+                    console.warn('Skipping canvas - no data available');
+                    counter++;
+                    continue;
+                }
+                
                 const paddedCounter = String(counter).padStart(paddingLength, '0');
+                
                 if (multipleDownloads) {
                     // Download each file separately
+                    let extension = event.target.dataset.canvasType.substring(6);
+                    if (canvasResult.hasSourceUrl) {
+                        // Extract extension from source URL or default to png
+                        try {
+                            const urlPath = new URL(canvasResult.dataURL).pathname;
+                            const ext = urlPath.split('.').pop().toLowerCase();
+                            extension = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) ? ext : 'png';
+                        } catch (e) {
+                            extension = 'png';
+                        }
+                    }
                     await chrome.downloads.download({
-                        url: dataURL,
-                        filename: `${prefix}_${paddedCounter}.` + event.target.dataset.canvasType.substring(6),
+                        url: canvasResult.dataURL,
+                        filename: `${prefix}_${paddedCounter}.` + extension,
                         saveAs: !useDefaultLocation
                     });
                 } else {
-                    // Add to zip
-                    zip.file(`${prefix}_${paddedCounter}.` + event.target.dataset.canvasType.substring(6), dataURL.split('base64,')[1],{base64: true});
+                    // Add to zip - need to handle source URLs differently
+                    if (canvasResult.hasSourceUrl) {
+                        // Fetch the image and convert to base64 for zip
+                        try {
+                            const response = await fetch(canvasResult.dataURL);
+                            const blob = await response.blob();
+                            const base64 = await blobToBase64(blob);
+                            const base64Data = base64.split('base64,')[1];
+                            if (base64Data) {
+                                zip.file(`${prefix}_${paddedCounter}.png`, base64Data, {base64: true});
+                            }
+                        } catch (e) {
+                            console.error('Failed to fetch source URL for zip:', e);
+                        }
+                    } else {
+                        // Regular data URL
+                        const base64Data = canvasResult.dataURL.split('base64,')[1];
+                        if (base64Data) {
+                            zip.file(`${prefix}_${paddedCounter}.` + event.target.dataset.canvasType.substring(6), base64Data, {base64: true});
+                        }
+                    }
                 }
                 counter++;
             }
@@ -185,6 +248,7 @@
             }
         }
         else if (event.target.dataset.canvasPdf){
+            spinnerText.textContent = 'Generating PDF...';
             let counter = 1;
             let doc = new window.jspdf.jsPDF();
             let entries;
@@ -207,11 +271,32 @@
             const paddingLength = String(totalPages).length;
             
             for (let entry of entries){
-                let dataURL = await getCanvasContent( {
+                let canvasResult = await getCanvasContent( {
                     frame:entry[0],
                     index: entry[1],
                     type: event.target.dataset.canvasType,
                 });
+                
+                // Skip tainted canvases without source URL
+                if (!canvasResult || !canvasResult.dataURL) {
+                    console.warn('Skipping canvas for PDF - no data available');
+                    continue;
+                }
+                
+                let dataURL = canvasResult.dataURL;
+                
+                // For source URLs, we need to fetch and convert to data URL for PDF
+                if (canvasResult.hasSourceUrl) {
+                    try {
+                        const response = await fetch(dataURL);
+                        const blob = await response.blob();
+                        dataURL = await blobToBase64(blob);
+                    } catch (e) {
+                        console.error('Failed to fetch source URL for PDF:', e);
+                        continue;
+                    }
+                }
+                
                 // fit image to page, preserve aspect ratio
                 let imageWidth = 0, imageHeight = 0, width = 0, height = 0;
                 try {
@@ -254,27 +339,71 @@
             });
         }
         else{
-            let dataURL = await getCanvasContent( {
+            // Get canvas content
+            if (event.target.dataset.canvasCopy){
+                spinnerText.textContent = 'Copying...';
+            } else {
+                spinnerText.textContent = 'Saving...';
+            }
+            // Get canvas content
+            let canvasResult = await getCanvasContent( {
                 frame:event.target.dataset.canvasFrame,
                 index: event.target.dataset.canvasIndex,
                 type: event.target.dataset.canvasType,
             });
+            
+            // Handle case where canvas data is not available
+            if (!canvasResult || !canvasResult.dataURL) {
+                main.style.display = 'block';
+                spinner.style.display = 'none';
+                return;
+            }
+            
+            let dataURL = canvasResult.dataURL;
+            const hasSourceUrl = canvasResult.hasSourceUrl;
+            
             if (event.target.dataset.canvasCopy){
-                await copyDataUrlToClipboard(dataURL);
-                event.target.classList.add('is-success');
-                event.target.innerText = 'COPIED!';
-                setTimeout(()=>{
-                    event.target.classList.remove('is-success');
-                    event.target.innerText = 'COPY';
-                }, 1000);
+                if (hasSourceUrl) {
+                    // Cannot copy source URL to clipboard as image
+                    event.target.classList.add('is-danger');
+                    event.target.innerText = 'N/A';
+                    setTimeout(()=>{
+                        event.target.classList.remove('is-danger');
+                        event.target.innerText = 'COPY';
+                    }, 1000);
+                } else {
+                    await copyDataUrlToClipboard(dataURL);
+                    event.target.classList.add('is-success');
+                    event.target.innerText = 'COPIED!';
+                    setTimeout(()=>{
+                        event.target.classList.remove('is-success');
+                        event.target.innerText = 'COPY';
+                    }, 1000);
+                }
             } else {
                 let useDefaultLocation = await getUseDefaultLocation();
                 let useTimestamp = await getTimestampPrefix();
                 let prefix = useTimestamp ? getFilePrefix() : 'canvas';
                 console.log('useDefaultLocation:', useDefaultLocation, 'saveAs:', !useDefaultLocation);
+                
+                // Determine file extension
+                let extension;
+                if (hasSourceUrl) {
+                    // Extract extension from source URL or default to png
+                    try {
+                        const urlPath = new URL(dataURL).pathname;
+                        const ext = urlPath.split('.').pop().toLowerCase();
+                        extension = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'].includes(ext) ? ext : 'png';
+                    } catch (e) {
+                        extension = 'png';
+                    }
+                } else {
+                    extension = event.target.dataset.canvasType.substring(6);
+                }
+                
                 await chrome.downloads.download({
                     url: dataURL,
-                    filename: `${prefix}.` + event.target.dataset.canvasType.substring(6),
+                    filename: `${prefix}.` + extension,
                     saveAs: !useDefaultLocation
                 });
             }
@@ -302,6 +431,23 @@
         if (message.canvasInfoList) {
             canvasInfoList = canvasInfoList.concat(message.canvasInfoList);
             drawContent(canvasInfoList);
+            // Hide spinner and show main content
+            spinner.style.display = 'none';
+            main.style.display = 'block';
+        }
+    });
+
+    // Set a timeout to hide spinner if no response received
+    let spinnerTimeout = setTimeout(() => {
+        spinner.style.display = 'none';
+        main.style.display = 'block';
+        drawContent([]);
+    }, 3000);
+
+    // Clear timeout when message is received
+    chrome.runtime.onMessage.addListener(function(message) {
+        if (message.canvasInfoList) {
+            clearTimeout(spinnerTimeout);
         }
     });
 
@@ -314,7 +460,7 @@
                 index: data.index,
                 type: data.type,
             }});
-        return result.dataURL;
+        return result;
     }
 
     function getSelectedEntries() {
@@ -378,27 +524,42 @@
         let section = document.getElementById('main');
 
         if (canvasInfoList.length > 0){
+            // Separate available and tainted canvases
+            const availableCanvases = canvasInfoList.filter(c => !c.isTainted || c.hasSourceUrl);
+            const taintedCanvases = canvasInfoList.filter(c => c.isTainted && !c.hasSourceUrl);
+            
             let html = [];
 
-            html.push("<table class=\"table is-narrow\">");
-            html.push("<tr>");
-            html.push("<th class=\"checkbox-column\">");
-            html.push("</th>");
-            html.push("<th>");
-            html.push("Preview");
-            html.push("</th>");
-            html.push("<th colspan=\"4\">");
-            html.push("Export options");
-            html.push("</th>");
-            html.push("</tr>");
+            if (availableCanvases.length > 0) {
+                html.push("<table class=\"table is-narrow\">");
+                html.push("<tr>");
+                html.push("<th class=\"checkbox-column\">");
+                html.push("</th>");
+                html.push("<th>");
+                html.push("Preview");
+                html.push("</th>");
+                html.push("<th colspan=\"4\">");
+                html.push("Export options");
+                html.push("</th>");
+                html.push("</tr>");
 
-            drawDownloadAll(html, canvasInfoList.map(element => element.frameId + '|||' + element.index).join(';;;'));
+                drawDownloadAll(html, availableCanvases.map(element => element.frameId + '|||' + element.index).join(';;;'));
 
-            canvasInfoList.forEach((canvasInfo, index)=>{
-                drawElement(html, canvasInfo, index);
-            });
+                // Only draw available canvases
+                availableCanvases.forEach((canvasInfo, index)=>{
+                    drawElement(html, canvasInfo, index);
+                });
 
-            html.push("</table>");
+                html.push("</table>");
+            }
+
+            // Show tainted canvas warning at the bottom as sticky footer
+            if (taintedCanvases.length > 0) {
+                html.push("<div style=\"position: sticky; bottom: 0; margin-top: 8px; padding: 6px 8px; font-size: 11px; background: #fff3cd; border: 1px solid #ffc107; color: #856404;\">");
+                html.push("<strong>⚠️ " + taintedCanvases.length + " canvas" + (taintedCanvases.length > 1 ? "es" : "") + " not shown</strong> — Cross-origin images cannot be exported due to browser security. ");
+                html.push("<a href=\"https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/CORS_enabled_image\" target=\"_blank\" rel=\"noopener\" style=\"color: #856404; text-decoration: underline;\">Learn more</a>");
+                html.push("</div>");
+            }
 
             section.innerHTML = html.join('\n');
 
@@ -417,24 +578,50 @@
     }
 
     function drawElement(html, element, index){
+        const hasSourceUrl = element.hasSourceUrl;
+        
         html.push("<tr>");
         html.push("<td class=\"checkbox-column\">");
         html.push(`<input type="checkbox" name="canvas-select" value="${index}" class="checkbox-input" checked>`);
         html.push("</td>");
         html.push("<td>");
-        html.push("<img alt='canvas content' src=\"" + element.dataURL + "\">");
+        
+        // Show preview
+        if (element.dataURL) {
+            html.push("<img alt='canvas content' src=\"" + element.dataURL + "\">");
+        }
+        
+        // Add source URL indicator
+        if (hasSourceUrl) {
+            html.push("<div style='font-size:9px;color:#48c774;margin-top:2px;' title='Using source URL'>🔗 Source URL</div>");
+        }
+        
         html.push("</td>");
+        
+        // Export buttons
         html.push("<td>");
         html.push("<button class=\"button is-primary is-small\" data-canvas-type=\"image/png\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as PNG image.\">PNG</button>");
         html.push("</td>");
         html.push("<td>");
-        html.push("<button class=\"button is-primary is-small\" data-canvas-type=\"image/jpeg\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as JPEG image with 100% quality.\">JPEG</button>");
+        if (!hasSourceUrl) {
+            html.push("<button class=\"button is-primary is-small\" data-canvas-type=\"image/jpeg\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as JPEG image with 100% quality.\">JPEG</button>");
+        } else {
+            html.push("<button class=\"button is-small\" disabled title=\"JPEG not available for source URLs\">JPEG</button>");
+        }
         html.push("</td>");
         html.push("<td>");
-        html.push("<button class=\"button is-primary is-small\" data-canvas-type=\"image/webp\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as WEBP image.\">WEBP</button>");
+        if (!hasSourceUrl) {
+            html.push("<button class=\"button is-primary is-small\" data-canvas-type=\"image/webp\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Download as WEBP image.\">WEBP</button>");
+        } else {
+            html.push("<button class=\"button is-small\" disabled title=\"WEBP not available for source URLs\">WEBP</button>");
+        }
         html.push("</td>");
         html.push("<td>");
-        html.push("<button class=\"button is-primary is-small fixed-size\" data-canvas-type=\"image/png\" data-canvas-copy=\"true\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Copy to clipboard.\">COPY</button>");
+        if (!hasSourceUrl) {
+            html.push("<button class=\"button is-primary is-small fixed-size\" data-canvas-type=\"image/png\" data-canvas-copy=\"true\" data-canvas-frame=\"" + element.frameId + "\" data-canvas-index=\"" + element.index + "\" title=\"Copy to clipboard.\">COPY</button>");
+        } else {
+            html.push("<button class=\"button is-small fixed-size\" disabled title=\"Copy not available for source URLs\">COPY</button>");
+        }
         html.push("</td>");
         html.push("</tr>");
     }
@@ -487,6 +674,16 @@
             }
 
             resolve(new Blob([u8arr], { type: mime }));
+        });
+    }
+
+    // Helper function to convert Blob to Base64 Data URL
+    function blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
         });
     }
 
