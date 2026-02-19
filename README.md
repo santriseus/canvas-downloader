@@ -4,4 +4,5 @@ Page for testing the extension using multiple canvas elements [here](https://san
 Extension helps detect if canvas is used at the web page and allows to export and download canvas content in multiple formats.  
 Extension could be helpful if creator of the web site disabled the canvas context menu with "Save As" option.  
 Just click on the extension icon, it will try to find all the canvas data on the page and show you a list of detections for downloading.
+Check "Settings" in order to select the way images are downloaded and enable extra logic for finding "tainted" canvas elements or downloading images with blob urls.
 
